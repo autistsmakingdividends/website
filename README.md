@@ -31,19 +31,12 @@ gh repo create amd-site --public --source=. --push      # or create it on github
 
 Then in the repo: **Settings → Pages → Source: Deploy from a branch → `main` / `/ (root)`**.
 
-The site currently serves at **https://autistsmakingdividends.github.io/website/**.
+The site serves at **https://autistsmakingdividends.com** (attached 2026-09-04), with
+`autistsmakingdividends.github.io/website` redirecting to it.
 
-**To attach the custom domain once `autistsmakingdividends.com` is registered** (as of 2026-09-03 it
-is not — RDAP returns 404), add the DNS records below, then:
-
-```sh
-echo autistsmakingdividends.com > CNAME
-git add CNAME && git commit -m "attach custom domain" && git push
-```
-
-Do it in that order. A `CNAME` file pointing at a domain that does not resolve makes Pages 301 the
-`github.io` URL to it, which takes the whole site offline — the site is served, but nothing can
-reach it. Tick **Enforce HTTPS** in Settings → Pages once the certificate issues (a few minutes):
+DNS lives at Namecheap. The records, for reference — and the order matters: **point DNS first, add
+the `CNAME` file second.** A `CNAME` naming a domain that does not resolve makes Pages 301 every
+`github.io` URL to it, so the site deploys fine and is reachable by nobody:
 
 | Type | Name | Value |
 |---|---|---|
