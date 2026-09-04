@@ -1,0 +1,87 @@
+name: registry-counts
+
+# Keeps the registry's all-time boards from going stale.
+#
+# The page reads LIVE reservations straight from the chain on every load, so "Expiring next" and the
+# ticker search can never rot. The all-time boards are different: counting how often each ticker has
+# been deployed needs the factory's whole history (45M+ blocks), which is a batch job, not a page
+# load. That artefact is `counts.json`, and this workflow is what stops it ageing.
+#
+# TWO LAYERS, because a cron alone is not a freshness guarantee. GitHub silently skips scheduled
+# slots under load and records nothing when it does, so a job that "never failed" can still be hours
+# behind. The page therefore ALSO merges every launch newer than the file's `to_block` out of the
+# window it already fetches -- no extra request -- and if that gap grows wider than the window can
+# span, it says so on the page instead of presenting stale counts as current. This workflow keeps
+# the gap small; the page keeps it honest.
+#
+# Cheap enough to run often: ~55 RPC calls and ~60 seconds against a free, keyless endpoint.
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'      # every 3h, off the hour to dodge the busiest cron slots
+  workflow_dispatch: {}
+
+concurrency:
+  # cancel-in-progress TRUE: the scan is idempotent and rebuilds from genesis every time, so a
+  # cancelled run loses nothing and a fresh one is always strictly better than a stalled one.
+  # (Contrast a collector whose data cannot be backfilled, where a dropped restart is real loss.)
+  group: registry-counts
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # No pip install: build_counts.py is stdlib-only and carries its own RPC helper precisely so
+      # this step cannot break on a dependency.
+      - name: rebuild counts.json
+        env:
+          RPC_MIN_INTERVAL: '0.2'
+        run: python3 build_counts.py
+
+      # Verify the ARTEFACT, not the exit code. A scan that returns junk exits 0 just as happily as
+      # one that works, and committing a plausible-looking empty file is worse than not running.
+      - name: sanity-check the artefact
+        run: |
+          python3 - <<'PY'
+          import json, time, sys
+          c = json.load(open("counts.json"))
+          fails = []
+          if c["events"] < 10000:            fails.append(f"only {c['events']} deployments")
+          if c["distinct_tickers"] < 5000:   fails.append(f"only {c['distinct_tickers']} tickers")
+          if not c.get("pairs"):             fails.append("no quote assets")
+          if not c.get("repeat"):            fails.append("no repeat tickers")
+          if not any(p["c"] == "stock" for p in c["pairs"]):
+              fails.append("no pair classified as a stock -- issuer lookup probably failed")
+          today = time.strftime("%Y-%m-%d", time.gmtime())
+          if not any(d["d"] == today for d in c["per_day"]):
+              fails.append(f"per_day has nothing for {today}")
+          age = time.time() - c["generated_at"]
+          if age > 3600:                     fails.append(f"generated_at is {age/60:.0f} min old")
+          if fails:
+              print("REFUSING TO COMMIT:", "; ".join(fails)); sys.exit(1)
+          print(f"ok: {c['events']:,} deployments, {c['distinct_tickers']:,} tickers, "
+                f"{len(c['pairs'])} quote assets, {len(c['repeat']):,} repeat")
+          PY
+
+      - name: commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- counts.json; then
+            echo "counts.json unchanged — nothing to commit"
+          else
+            git add counts.json
+            git commit -m "counts: refresh all-time boards [skip ci]"
+            git push
+          fi

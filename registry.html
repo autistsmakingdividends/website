@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Office of Ticker Reservations</title>
+<meta name="description" content="Look up when a reserved ticker on Long.xyz becomes available again. Reads the reservation straight off Robinhood Chain.">
+<link rel="icon" href="logo-96.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700;900&display=swap">
+<style>
+:root{
+  --ground:#000000;
+  --panel:#080D0B;
+  --panel-2:#050908;
+  --rule:#15241D;
+  --rule-bright:#21382E;
+  --ink:#FFFFFF;
+  --ink-2:#B4C6BE;
+  --ink-dim:#788B83;
+  --jade:#0FA168;
+  --mint:#02C385;
+  --mint-hot:#0BE39B;
+  --mint-wash:rgba(2,195,133,.10);
+  --held:#E0A93B;
+  --held-wash:rgba(224,169,59,.10);
+  --void:#8A6A62;
+  --sans:"Roboto",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --maxw:1080px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);
+  font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+a{color:var(--mint);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+.wm b{color:var(--mint);font-weight:700}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--rule);background:var(--panel-2)}
+.mast-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0}
+.brand{display:flex;align-items:center;gap:12px;color:var(--ink)}
+.brand:hover{text-decoration:none}
+.brand img{width:46px;height:46px;display:block;flex:none}
+.brand-txt{font-weight:900;font-size:21px;letter-spacing:.11em;line-height:1.1}
+.brand-sub{font-family:var(--mono);font-size:11.5px;letter-spacing:.045em;color:var(--ink-2);white-space:nowrap}
+.mast-nav{display:flex;gap:22px;font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase}
+.mast-nav a{color:var(--ink-dim)}
+.mast-nav a:hover{color:var(--mint);text-decoration:none}
+.mast-nav .x{color:var(--mint);text-transform:none;letter-spacing:.02em;display:flex;
+  align-items:center;gap:6px}
+.mast-nav .x svg{width:11px;height:11px;fill:currentColor;flex:none}
+.mast-nav .x:hover{color:var(--mint-hot)}
+
+/* ---------- document header ---------- */
+.doc{padding:56px 0 40px;border-bottom:1px solid var(--rule)}
+.formno{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--mint);text-transform:uppercase;margin-bottom:20px}
+h1{
+  font-weight:900;font-size:clamp(36px,7vw,70px);line-height:.97;letter-spacing:-.025em;
+  margin:0 0 20px;text-wrap:balance;text-transform:uppercase;
+}
+.standfirst{font-size:clamp(16px,2vw,18.5px);color:var(--ink-2);max-width:60ch;margin:0 0 26px}
+.standfirst strong{color:var(--ink);font-weight:700}
+.meta-row{display:flex;flex-wrap:wrap;border:1px solid var(--rule)}
+.meta-cell{padding:11px 16px;border-right:1px solid var(--rule);flex:1 1 auto;min-width:150px}
+.meta-cell:last-child{border-right:0}
+.meta-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase}
+.meta-v{font-family:var(--mono);font-size:13px;color:var(--ink);margin-top:3px;font-variant-numeric:tabular-nums}
+
+/* ---------- query ---------- */
+.query{padding:40px 0 8px}
+.legend{font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:12px}
+.field{display:flex;border:1px solid var(--rule-bright);background:var(--panel);flex-wrap:wrap}
+.prefix{
+  display:grid;place-items:center;padding:0 16px;font-family:var(--mono);font-size:20px;
+  color:var(--mint);border-right:1px solid var(--rule-bright);background:var(--panel-2);
+}
+#ticker{
+  flex:1 1 220px;min-width:0;background:transparent;border:0;color:var(--ink);
+  font-family:var(--mono);font-weight:500;font-size:clamp(20px,3.6vw,28px);
+  letter-spacing:.10em;padding:16px 18px;text-transform:uppercase;
+}
+#ticker::placeholder{color:#33463D;letter-spacing:.10em}
+#ticker:focus{outline:none}
+.field:focus-within{border-color:var(--mint)}
+#go{
+  border:0;border-left:1px solid var(--rule-bright);background:var(--mint);color:#00160E;
+  font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;padding:0 26px;cursor:pointer;min-height:56px;
+}
+#go:hover{background:var(--mint-hot)}
+#go:disabled{background:var(--rule-bright);color:var(--ink-dim);cursor:not-allowed}
+.hint{font-family:var(--mono);font-size:11px;color:var(--ink-dim);margin-top:10px;letter-spacing:.04em}
+
+/* ---------- record ---------- */
+.record{margin:26px 0 0;border:1px solid var(--rule);background:var(--panel);display:none}
+.record.on{display:block}
+.rec-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  padding:22px 24px;border-bottom:1px solid var(--rule);
+}
+.rec-tick{font-weight:900;font-size:clamp(28px,5.2vw,44px);line-height:1;letter-spacing:-.02em}
+.stamp{
+  font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.15em;text-transform:uppercase;
+  border:1.5px solid currentColor;padding:7px 13px;white-space:nowrap;
+}
+.s-held{color:var(--held);background:var(--held-wash)}
+.s-free{color:var(--mint);background:var(--mint-wash)}
+.s-void{color:var(--void);background:rgba(138,106,98,.10)}
+.verdict{padding:24px;border-bottom:1px solid var(--rule)}
+.v-label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:10px}
+.v-line{font-size:clamp(17px,2.5vw,21px);line-height:1.45;color:var(--ink);max-width:56ch}
+.v-line b{color:var(--mint);font-weight:700}
+.v-line b.held{color:var(--held)}
+.clock{
+  font-family:var(--mono);font-weight:700;font-size:clamp(30px,7vw,52px);
+  letter-spacing:.01em;line-height:1;font-variant-numeric:tabular-nums;margin:16px 0 6px;color:var(--held);
+}
+.clock-sub{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;color:var(--ink-dim);text-transform:uppercase}
+.rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr))}
+.row{padding:16px 24px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.row-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase}
+.row-v{font-family:var(--mono);font-size:13px;color:var(--ink-2);margin-top:5px;word-break:break-all;font-variant-numeric:tabular-nums}
+.rec-foot{padding:13px 24px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--ink-dim)}
+
+/* ---------- tape ---------- */
+.tape-sec{border-bottom:1px solid var(--rule);background:var(--panel-2)}
+.tape-hd{
+  display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink-dim);text-transform:uppercase;
+}
+.dot{width:6px;height:6px;background:var(--mint);flex:none;border-radius:50%}
+.tape{overflow:hidden;white-space:nowrap;padding:13px 0}
+.tape-track{display:inline-flex;gap:34px;padding-left:24px;will-change:transform}
+@media (prefers-reduced-motion:no-preference){
+  .dot{animation:blink 2.4s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+  .tape-track{animation:roll 64s linear infinite}
+  @keyframes roll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+}
+@media (prefers-reduced-motion:reduce){ .tape{overflow-x:auto} }
+.tape-item{font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--ink-2);flex:none}
+.tape-item b{color:var(--ink);font-weight:700}
+.tape-item span{color:var(--held);font-variant-numeric:tabular-nums}
+.tape-empty{font-family:var(--mono);font-size:12px;color:var(--ink-dim);padding-left:24px}
+
+/* ---------- preview banner (shown only when outbound calls are blocked) ---------- */
+.banner{border-bottom:1px solid var(--held);background:var(--held-wash);padding:12px 0}
+.banner-in{font-family:var(--mono);font-size:11.5px;line-height:1.65;color:var(--held);letter-spacing:.02em}
+.banner-in b{color:#F6D48B;font-weight:700}
+
+/* ---------- prose ---------- */
+.sec{padding:52px 0;border-bottom:1px solid var(--rule)}
+h2{font-weight:900;font-size:clamp(22px,3.2vw,30px);letter-spacing:-.02em;text-transform:uppercase;margin:0 0 8px;text-wrap:balance}
+.sec-no{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--mint);text-transform:uppercase;margin-bottom:14px}
+.sec p{color:var(--ink-2);max-width:66ch;margin:0 0 15px}
+.sec p:last-child{margin-bottom:0}
+.sec strong{color:var(--ink);font-weight:700}
+code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-all}
+.facts{border:1px solid var(--rule);margin-top:22px}
+.fact{display:flex;gap:18px;padding:13px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.fact:last-child{border-bottom:0}
+.fact-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;color:var(--ink-dim);text-transform:uppercase;flex:0 0 168px}
+.fact-v{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);flex:1 1 260px;word-break:break-all}
+.fact-v b{color:var(--ink);font-weight:700}
+
+/* ---------- the two boards ---------- */
+.boards-rail{max-width:1240px;margin:0 auto;padding:0 24px}
+.boards{display:grid;grid-template-columns:1fr;gap:24px}
+@media(min-width:720px){.boards{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.boards{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1180px){.boards{grid-template-columns:repeat(4,1fr)}}
+.tag{
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid currentColor;padding:1px 4px;flex:none;opacity:.85;
+}
+.tag-stock{color:var(--mint)}
+.tag-token{color:var(--held)}
+.tag-eth,.tag-other{color:var(--ink-dim)}
+.mom{font-family:var(--mono);font-size:10px;flex:none;font-variant-numeric:tabular-nums;width:44px;text-align:right}
+.mom-up{color:var(--mint)}
+.mom-dn{color:var(--void)}
+.mom-flat{color:var(--ink-dim)}
+
+/* ---------- launch-volume strip ---------- */
+.stats{border:1px solid var(--rule);background:var(--panel);margin-bottom:24px;
+  display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:760px){.stats{grid-template-columns:auto auto auto 1fr}}
+.stat{padding:14px 20px;border-bottom:1px solid var(--rule)}
+@media(min-width:760px){.stat{border-bottom:0;border-right:1px solid var(--rule)}}
+.stat-k{font-family:var(--mono);font-size:9.5px;letter-spacing:.15em;color:var(--ink-dim);text-transform:uppercase}
+.stat-v{font-family:var(--mono);font-weight:700;font-size:21px;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums}
+.spark{padding:12px 20px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.spark svg{width:100%;height:44px;display:block;overflow:visible}
+.spark-cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:6px}
+.fresh{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-dim);margin-top:14px}
+.fresh b{color:var(--held);font-weight:700}
+.board{border:1px solid var(--rule);background:var(--panel);display:flex;flex-direction:column;min-width:0}
+.board-hd{padding:16px 20px;border-bottom:1px solid var(--rule)}
+.board-t{font-weight:900;font-size:17px;letter-spacing:-.01em;text-transform:uppercase;line-height:1.2}
+.board-s{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-dim);margin-top:6px}
+.board-search{padding:12px 20px;border-bottom:1px solid var(--rule);background:var(--panel-2)}
+.board-search input{
+  width:100%;background:var(--ground);border:1px solid var(--rule-bright);color:var(--ink);
+  font-family:var(--mono);font-size:13px;letter-spacing:.08em;padding:10px 12px;text-transform:uppercase;
+}
+.board-search input::placeholder{color:#33463D;letter-spacing:.06em}
+.board-search input:focus{outline:none;border-color:var(--mint)}
+.board-body{overflow-y:auto;max-height:430px;flex:1}
+.brow{
+  display:flex;align-items:baseline;gap:12px;padding:9px 20px;
+  border-bottom:1px solid rgba(21,36,29,.6);font-family:var(--mono);font-size:13px;
+}
+.brow:last-child{border-bottom:0}
+.brow:hover{background:var(--mint-wash)}
+.brow-rank{color:var(--ink-dim);font-size:11px;flex:0 0 26px;font-variant-numeric:tabular-nums}
+.brow-t{color:var(--ink);font-weight:700;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.brow-t:hover{color:var(--mint)}
+.brow-n{color:var(--mint);font-variant-numeric:tabular-nums;flex:none}
+.brow-c{color:var(--held);font-variant-numeric:tabular-nums;flex:none}
+.brow-u{color:var(--ink-dim);font-size:11px;flex:none;font-variant-numeric:tabular-nums}
+.board-empty{padding:22px 20px;font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+.board-ft{padding:10px 20px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--ink-dim)}
+
+/* ---------- footer ---------- */
+.foot{padding:38px 0 60px;color:var(--ink-dim);font-size:13px}
+.foot-rule{height:1px;background:var(--rule);margin-bottom:26px}
+.disclaim{font-family:var(--mono);font-size:11px;line-height:1.75;letter-spacing:.02em;max-width:74ch;margin:0}
+.disclaim b{color:var(--ink-2);font-weight:700}
+@media(max-width:640px){
+  .mast-nav{gap:14px;font-size:10px}
+  .brand-sub{font-size:10px;letter-spacing:.02em}
+  .brand img{width:38px;height:38px}
+  .brand-txt{font-size:18px}
+  .row{border-right:0}
+  #go{flex:1 1 100%;border-left:0;border-top:1px solid var(--rule-bright);padding:16px}
+}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html">
+      <img src="logo-96.png" alt="" width="34" height="34">
+      <span>
+        <span class="brand-txt">AMD</span><br>
+        <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
+      </span>
+    </a>
+    <nav class="mast-nav">
+      <a href="index.html">&larr; Home</a>
+      <a href="https://app.long.xyz/" rel="noopener noreferrer" target="_blank">Long.xyz</a>
+      <a class="x" href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8.1 9.2 9.5 12.6h-7.4l-5.8-7.6-6.7 7.6H.4l8.6-9.9L0 1.2h7.6l5.2 6.9z"/></svg>AMD_on_RH</a>
+    </nav>
+  </div>
+</header>
+
+<div class="banner" id="banner" hidden>
+  <div class="wrap banner-in" id="bannerText"></div>
+</div>
+
+<main>
+  <section class="tape-sec" aria-label="Recently filed reservations">
+    <div class="tape-hd"><span class="dot" aria-hidden="true"></span> Recently filed &mdash; live from chain</div>
+    <div class="tape"><div class="tape-track" id="tape"><span class="tape-empty">Reading the registry&hellip;</span></div></div>
+  </section>
+  <section class="doc">
+    <div class="wrap">
+      <div class="formno">AMD Public Records Division &middot; Form TR-1</div>
+      <h1>Office of Ticker Reservations</h1>
+      <p class="standfirst">When a token launches on Long.xyz, its ticker is held for <strong>24 hours</strong> so nobody can copycat it. The launch app tells you a ticker is taken. It does not tell you <strong>when it comes back</strong>. Management threated to fire me if I didn't make this tool.</p>
+      <div class="meta-row">
+        <div class="meta-cell"><div class="meta-k">Jurisdiction</div><div class="meta-v">Robinhood Chain &middot; 4663</div></div>
+        <div class="meta-cell"><div class="meta-k">Hold period</div><div class="meta-v">86,400 s</div></div>
+        <div class="meta-cell"><div class="meta-k">Source</div><div class="meta-v">On-chain, read live</div></div>
+        <div class="meta-cell"><div class="meta-k">Fee</div><div class="meta-v">None</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="query">
+    <div class="wrap">
+      <div class="legend">Submit ticker for records search</div>
+      <div class="field">
+        <span class="prefix" aria-hidden="true">$</span>
+        <label for="ticker" style="position:absolute;left:-9999px">Ticker symbol</label>
+        <input id="ticker" type="text" placeholder="AMD" maxlength="15" autocomplete="off"
+               autocapitalize="characters" spellcheck="false" inputmode="text">
+        <button id="go" type="button">Search</button>
+      </div>
+      <p class="hint">Letters only, 1&ndash;15 characters. Case does not matter &mdash; the registry folds it.</p>
+
+      <div class="record" id="record" aria-live="polite">
+        <div class="rec-head">
+          <div class="rec-tick" id="recTick">&mdash;</div>
+          <div class="stamp" id="recStamp">&mdash;</div>
+        </div>
+        <div class="verdict">
+          <div class="v-label">Finding</div>
+          <div class="v-line" id="recLine"></div>
+          <div class="clock" id="recClock" hidden></div>
+          <div class="clock-sub" id="recClockSub" hidden></div>
+        </div>
+        <div class="rows" id="recRows"></div>
+        <div class="rec-foot" id="recFoot"></div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <section class="sec" id="boards">
+    <div class="boards-rail">
+
+      <div class="stats">
+        <div class="stat"><div class="stat-k">Today</div><div class="stat-v" id="stToday">&mdash;</div></div>
+        <div class="stat"><div class="stat-k">Last 7 days</div><div class="stat-v" id="st7">&mdash;</div></div>
+        <div class="stat"><div class="stat-k">All time</div><div class="stat-v" id="stAll">&mdash;</div></div>
+        <div class="spark">
+          <div class="spark-cap">Tokens deployed per day</div>
+          <div id="spark"></div>
+        </div>
+      </div>
+
+      <div class="boards">
+
+        <div class="board">
+          <div class="board-hd">
+            <div class="board-t">Most contested</div>
+            <div class="board-s">Tokens deployed under each ticker &middot; all&#8209;time</div>
+          </div>
+          <div class="board-body" id="topBody"><div class="board-empty">Loading&hellip;</div></div>
+          <div class="board-ft" id="topFoot"></div>
+        </div>
+
+        <div class="board">
+          <div class="board-hd">
+            <div class="board-t">Contested &amp; free</div>
+            <div class="board-s">Proven names nobody holds right now</div>
+          </div>
+          <div class="board-body" id="freeBody"><div class="board-empty">Loading&hellip;</div></div>
+          <div class="board-ft" id="freeFoot"></div>
+        </div>
+
+        <div class="board">
+          <div class="board-hd">
+            <div class="board-t">Expiring next</div>
+            <div class="board-s">Live reservations, soonest first</div>
+          </div>
+          <div class="board-search">
+            <label for="feedQ" style="position:absolute;left:-9999px">Filter expiring tickers</label>
+            <input id="feedQ" type="text" placeholder="Filter tickers&hellip;" autocomplete="off"
+                   spellcheck="false" autocapitalize="characters">
+          </div>
+          <div class="board-body" id="feedBody"><div class="board-empty">Reading the registry&hellip;</div></div>
+          <div class="board-ft" id="feedFoot"></div>
+        </div>
+
+        <div class="board">
+          <div class="board-hd">
+            <div class="board-t">Most paired</div>
+            <div class="board-s">What new tokens trade against &middot; all&#8209;time</div>
+          </div>
+          <div class="board-body" id="pairBody"><div class="board-empty">Loading&hellip;</div></div>
+          <div class="board-ft" id="pairFoot"></div>
+        </div>
+
+      </div>
+      <p class="fresh" id="fresh"></p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="wrap">
+      <div class="foot-rule"></div>
+      <p class="disclaim">
+        <b>AMD &mdash; Autists Making Dividends</b> is a memecoin and a joke about corporate culture. It is
+        <b>not affiliated with, endorsed by, or connected to Advanced Micro Devices, Inc.</b>, Robinhood Markets, Inc.,
+        or Long.xyz. The ticker is a backronym. Any resemblance to a semiconductor company is the entire bit.<br><br>
+        This page reads public blockchain data and reports it as-is. It is <b>not financial advice</b>, not a
+        recommendation to buy anything, and not a guarantee that a ticker will be free when the clock hits zero &mdash;
+        somebody else may file the moment it lapses. Memecoins routinely go to zero. Verify anything that matters
+        against the contract yourself.
+      </p>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var RPC="https://rpc.mainnet.chain.robinhood.com";
+  var FACTORY="0x22e99278308b393ea1260859b181ad7e78f5eeed";
+  var SEL_RECORD="0xe07511a0";
+  var SEL_AVAIL="0x22d38a76";
+  var TOPIC0="0xadc6f1f726f7c710f77ec06adc75f3bb964e5be19581b072c67f7b9b4039267b";
+  var EXPLORER="https://robinhoodchain.blockscout.com/address/";
+  var VALID=/^[A-Za-z]{1,15}$/;
+
+  var $=function(id){return document.getElementById(id);};
+  var elIn=$("ticker"), elGo=$("go"), elRec=$("record"), elTick=$("recTick"),
+      elStamp=$("recStamp"), elLine=$("recLine"), elClock=$("recClock"),
+      elClockSub=$("recClockSub"), elRows=$("recRows"), elFoot=$("recFoot"), elTape=$("tape");
+  var timer=null;
+  // A snapshot is injected only into builds that cannot reach the chain (e.g. a sandboxed preview
+  // whose CSP blocks outbound fetch). When absent, the page is live-only and says so on failure.
+  var SNAP=(typeof window!=="undefined" && window.__AMD_SNAPSHOT__) || null;
+  var PREVIEW=false;
+  // All-time filing counts. Fetched from counts.json when deployed; inlined in sandboxed builds.
+  var COUNTS=(typeof window!=="undefined" && window.__AMD_COUNTS__) || null;
+
+  function rpc(method,params){
+    return fetch(RPC,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({jsonrpc:"2.0",id:1,method:method,params:params})})
+    .then(function(r){ if(!r.ok) throw new Error("Node returned HTTP "+r.status); return r.json(); })
+    .then(function(d){ if(d.error) throw new Error(d.error.message||"call reverted"); return d.result; });
+  }
+
+  // A JSON-RPC error is an ANSWER with HTTP 200. For eth_call on this factory a revert means the
+  // ticker is malformed, which is a real finding -- not a transport failure to retry.
+  function batch(calls){
+    return fetch(RPC,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(calls.map(function(c,i){
+        return {jsonrpc:"2.0",id:i+1,method:"eth_call",params:[{to:FACTORY,data:c},"latest"]};
+      }))})
+    .then(function(r){ if(!r.ok) throw new Error("Node returned HTTP "+r.status); return r.json(); })
+    .then(function(arr){
+      var out=[];
+      (Array.isArray(arr)?arr:[arr]).forEach(function(d){
+        out[d.id-1]= d.error ? {err:d.error.message||"reverted"} : {ok:d.result};
+      });
+      return out;
+    });
+  }
+
+  function encString(s){
+    var bytes=new TextEncoder().encode(s), hex="";
+    for(var i=0;i<bytes.length;i++) hex+=bytes[i].toString(16).padStart(2,"0");
+    var pad=(64-(hex.length%64))%64;
+    return (32).toString(16).padStart(64,"0")+bytes.length.toString(16).padStart(64,"0")+hex+"0".repeat(pad);
+  }
+  function words(hex){
+    var s=(hex||"").replace(/^0x/,""),w=[];
+    for(var i=0;i<s.length;i+=64) w.push(s.slice(i,i+64));
+    return w;
+  }
+  var esc=function(s){return String(s).replace(/[<>&"]/g,function(c){
+    return {"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c];});};
+  var pad2=function(n){return String(n).padStart(2,"0");};
+  function fmtUTC(ts){
+    var d=new Date(ts*1000);
+    return d.getUTCFullYear()+"-"+pad2(d.getUTCMonth()+1)+"-"+pad2(d.getUTCDate())+" "+
+           pad2(d.getUTCHours())+":"+pad2(d.getUTCMinutes())+":"+pad2(d.getUTCSeconds())+"Z";
+  }
+  function fmtLocal(ts){
+    try{ return new Date(ts*1000).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"}); }
+    catch(e){ return fmtUTC(ts); }
+  }
+  function dur(sec){
+    if(sec<0) sec=0;
+    return pad2(Math.floor(sec/3600))+":"+pad2(Math.floor((sec%3600)/60))+":"+pad2(Math.floor(sec%60));
+  }
+  function ago(sec){
+    if(sec<60) return Math.floor(sec)+"s ago";
+    if(sec<3600) return Math.floor(sec/60)+"m ago";
+    if(sec<86400) return Math.floor(sec/3600)+"h ago";
+    return Math.floor(sec/86400)+"d ago";
+  }
+  function rowsHTML(list){
+    return list.map(function(r){
+      return '<div class="row"><div class="row-k">'+r[0]+'</div><div class="row-v">'+r[1]+"</div></div>";
+    }).join("");
+  }
+  function stopClock(){ if(timer){clearInterval(timer);timer=null;} }
+
+  function show(state){
+    stopClock();
+    elRec.classList.add("on");
+    elTick.textContent="$"+state.ticker;
+    elStamp.textContent=state.stamp;
+    elStamp.className="stamp "+state.stampClass;
+    elLine.innerHTML=state.line;
+    elRows.innerHTML=rowsHTML(state.rows||[]);
+    elFoot.textContent=state.foot||"";
+    if(state.until){
+      elClock.hidden=false; elClockSub.hidden=false;
+      elClock.style.color="var(--held)";
+      elClockSub.textContent="until released · "+fmtLocal(state.until)+" your time";
+      var tick=function(){
+        var left=state.until-Math.floor(Date.now()/1000);
+        if(left<=0){
+          stopClock();
+          elClock.textContent="00:00:00";
+          elClock.style.color="var(--mint)";
+          elClockSub.textContent="released — search again to confirm";
+          return;
+        }
+        elClock.textContent=dur(left);
+      };
+      tick(); timer=setInterval(tick,1000);
+    }else{
+      elClock.hidden=true; elClockSub.hidden=true;
+    }
+  }
+
+  // Render is shared by the live path and the snapshot path so the two can never drift apart.
+  function render(t,token,filed,exp,isFree,note){
+    var now=Math.floor(Date.now()/1000);
+    var link = (token && /[1-9a-f]/.test(token.slice(2)))
+      ? '<a href="'+EXPLORER+token+'" target="_blank" rel="noopener noreferrer">'+token+"</a>" : "—";
+    if(exp>now){
+      show({ticker:t,stamp:"Held",stampClass:"s-held",until:exp,
+        line:'<b class="held">$'+t+"</b> is reserved. It returns to the public pool at the moment "+
+             "below, and anyone may file it then — including you.",
+        rows:[["Held by token",link],["Filed",fmtUTC(filed)],["Lapses",fmtUTC(exp)],
+              ["Availability read",isFree===null?"not read":(isFree?"available (disagrees)":"not available")]],
+        foot:note});
+      return;
+    }
+    if(exp===0){
+      show({ticker:t,stamp:"Available",stampClass:"s-free",
+        line:"<b>$"+t+"</b> has never been filed on Long. It is free right now.",
+        rows:[["Record","none on file"],
+              ["Availability read",isFree===false?"not available (disagrees)":(isFree===null?"not read":"available")]],
+        foot:note});
+      return;
+    }
+    if(isFree===false){
+      show({ticker:t,stamp:"Held",stampClass:"s-held",
+        line:'<b class="held">$'+t+"</b> is unavailable, but its last reservation has already lapsed — "+
+             "so the contract is withholding it for a reason it does not publish. Treat the release time as unknown.",
+        rows:[["Last held by",link],["Last hold lapsed",fmtUTC(exp)+" ("+ago(now-exp)+")"],
+              ["Availability read","not available"]],
+        foot:note});
+      return;
+    }
+    show({ticker:t,stamp:"Available",stampClass:"s-free",
+      line:"<b>$"+t+"</b> is free. Its last hold lapsed "+ago(now-exp)+" and nobody has filed since.",
+      rows:[["Last held by",link],["Last hold lapsed",fmtUTC(exp)],
+            ["Availability read",isFree===null?"not read":"available"]],
+      foot:note});
+  }
+
+  // Answer from the embedded snapshot. Expiries are ABSOLUTE timestamps, so a countdown off the
+  // snapshot is still exact -- what a snapshot cannot know is filings made after it was taken.
+  function answerFromSnapshot(t){
+    var r=SNAP.rec[t];
+    var note="Records snapshot "+fmtUTC(SNAP.taken_at)+" · live chain read blocked here";
+    if(!r){ render(t,null,0,0,null,note); return; }
+    render(t,r[0],r[1],r[2],null,note);
+  }
+
+  function enterPreview(){
+    if(PREVIEW||!SNAP) return;
+    PREVIEW=true;
+    $("banner").hidden=false;
+    $("bannerText").innerHTML=
+      "<b>Preview.</b> This sandbox blocks outbound network calls, so the office is working from a "+
+      "records snapshot of <b>"+SNAP.n.toLocaleString()+" tickers</b> taken "+fmtUTC(SNAP.taken_at)+
+      ". Release times are exact; filings made since the snapshot are not included. "+
+      "Deployed on its own domain this page reads the chain live.";
+    var live=[];
+    for(var k in SNAP.rec){ live.push({ticker:k,expires:SNAP.rec[k][2],token:SNAP.rec[k][0]}); }
+    useLive(live,"snapshot of "+SNAP.n.toLocaleString()+" tickers · "+fmtUTC(SNAP.taken_at));
+  }
+
+  function search(){
+    var raw=(elIn.value||"").trim();
+    if(!raw){ elIn.focus(); return; }
+    var t=raw.toUpperCase();
+
+    if(!VALID.test(raw)){
+      show({ticker:esc(t.slice(0,15)),stamp:"Not a ticker",stampClass:"s-void",
+        line:"The registry takes <b>letters only, one to fifteen of them</b>. “"+esc(raw)+
+             "” contains something it will not accept, so it can never be filed as written — "+
+             "a different answer from “already held”.",
+        rows:[["Submitted",esc(raw)],["Accepted form","A–Z, 1–15 characters"]],
+        foot:"Rejected before it reached the chain."});
+      return;
+    }
+
+    if(PREVIEW){ answerFromSnapshot(t); return; }
+
+    elGo.disabled=true; elGo.textContent="Reading";
+    batch([SEL_RECORD+encString(t), SEL_AVAIL+encString(t)]).then(function(res){
+      var rec=res[0], avail=res[1];
+      if(rec.err && avail.err){
+        show({ticker:t,stamp:"Rejected",stampClass:"s-void",
+          line:"The contract refused this ticker outright. It is malformed, not merely taken.",
+          rows:[["Contract said",esc(rec.err)]],foot:"Read live from Robinhood Chain."});
+        return;
+      }
+      var w=words(rec.ok||"");
+      render(t,
+             w.length>0 ? "0x"+w[0].slice(24) : null,
+             w.length>1 ? parseInt(w[1],16) : 0,
+             w.length>2 ? parseInt(w[2],16) : 0,
+             avail.ok ? parseInt(avail.ok,16)===1 : null,
+             "Read live from Robinhood Chain · "+fmtUTC(Math.floor(Date.now()/1000)));
+    }).catch(function(e){
+      if(SNAP){ enterPreview(); answerFromSnapshot(t); return; }
+      show({ticker:t,stamp:"No answer",stampClass:"s-void",
+        line:"The chain node did not answer, so the registry does not know. That is a missing result, "+
+             "not a finding. Try again in a moment.",
+        rows:[["Reason",esc(String(e.message||e)).slice(0,140)]],foot:""});
+    }).then(function(){
+      elGo.disabled=false; elGo.textContent="Search";
+    });
+  }
+
+  elGo.addEventListener("click",search);
+  elIn.addEventListener("keydown",function(e){ if(e.key==="Enter") search(); });
+  elIn.addEventListener("input",function(){
+    var p=elIn.selectionStart; elIn.value=elIn.value.toUpperCase();
+    try{ elIn.setSelectionRange(p,p); }catch(e){}
+  });
+
+  // ---- one getLogs over the reservation window powers BOTH the tape and the expiry board.
+  // 24h holds ~2.1k events, well inside the node's 10k-log cap, so it is a single request
+  // (~2.4 MB of JSON, ~412 KB on the wire once gzipped). Cached so a reload is free.
+  var LIVE=[];                      // live reservations only, soonest expiry first
+  var ALLEV=[];                     // every event in the window, live or lapsed (feeds the merge)
+  var WINDOW_LO=null;               // lowest block the window actually reached
+  var ticks=[];                     // countdown cells to refresh each second
+
+  function decodeLog(log){
+    var w=words(log.data);
+    if(w.length<7) return null;
+    var off=parseInt(w[5],16)/32;
+    if(!(off>=6 && off<w.length)) return null;
+    var len=parseInt(w[off],16);
+    if(!(len>0 && len<=15)) return null;
+    var raw=w.slice(off+1).join("").slice(0,len*2);
+    var bytes=new Uint8Array(len);
+    for(var i=0;i<len;i++) bytes[i]=parseInt(raw.substr(i*2,2),16);
+    var name;
+    try{ name=new TextDecoder().decode(bytes); }catch(e){ return null; }
+    if(!VALID.test(name)) return null;
+    return {ticker:name.toUpperCase(),filed:parseInt(w[3],16),expires:parseInt(w[4],16),
+            token:"0x"+log.topics[1].slice(26),quote:"0x"+log.topics[3].slice(26),
+            block:parseInt(log.blockNumber,16)};
+  }
+
+  // A ticker refiled inside the window has two events; the LATEST expiry is the one that binds.
+  function collapse(list){
+    var now=Math.floor(Date.now()/1000), best={};
+    list.forEach(function(r){
+      if(!r || r.expires<=now) return;
+      if(!best[r.ticker] || r.expires>best[r.ticker].expires) best[r.ticker]=r;
+    });
+    var out=Object.keys(best).map(function(k){return best[k];});
+    out.sort(function(a,b){return a.expires-b.expires;});
+    return out;
+  }
+
+  function paintTape(items){
+    if(!items.length){ elTape.innerHTML='<span class="tape-empty">No filings in the last hour.</span>'; return; }
+    var now=Math.floor(Date.now()/1000);
+    var html=items.map(function(r){
+      return '<span class="tape-item"><b>$'+r.ticker+"</b> free in <span>"+dur(r.expires-now)+"</span></span>";
+    }).join("");
+    elTape.innerHTML=html+html; // duplicated so the marquee loops seamlessly
+  }
+
+  function renderFeed(){
+    var q=(($("feedQ").value)||"").trim().toUpperCase();
+    var rows=q? LIVE.filter(function(r){return r.ticker.indexOf(q)!==-1;}) : LIVE;
+    var body=$("feedBody");
+    ticks=[];
+    if(!rows.length){
+      body.innerHTML='<div class="board-empty">'+(q?"No live reservation matches “"+esc(q)+"”.":"No live reservations.")+"</div>";
+      $("feedFoot").textContent=q? "0 of "+LIVE.length.toLocaleString()+" shown" : "";
+      return;
+    }
+    var now=Math.floor(Date.now()/1000), frag=document.createDocumentFragment();
+    rows.forEach(function(r){
+      var d=document.createElement("div"); d.className="brow";
+      var t=document.createElement("span"); t.className="brow-t"; t.textContent="$"+r.ticker;
+      t.setAttribute("role","button"); t.setAttribute("tabindex","0");
+      t.title="Search "+r.ticker;
+      var c=document.createElement("span"); c.className="brow-c"; c.textContent=dur(r.expires-now);
+      var u=document.createElement("span"); u.className="brow-u"; u.textContent=fmtUTC(r.expires).slice(11);
+      d.appendChild(t); d.appendChild(c); d.appendChild(u);
+      frag.appendChild(d);
+      ticks.push({el:c,exp:r.expires});
+    });
+    body.innerHTML=""; body.appendChild(frag);
+    $("feedFoot").textContent = q
+      ? rows.length.toLocaleString()+" of "+LIVE.length.toLocaleString()+" shown"
+      : LIVE.length.toLocaleString()+" tickers held right now";
+  }
+
+  function renderTop(c){
+    var body=$("topBody");
+    if(!c || !c.top || !c.top.length){
+      body.innerHTML='<div class="board-empty">Counts unavailable.</div>'; return;
+    }
+    var frag=document.createDocumentFragment();
+    c.top.forEach(function(r,i){
+      var d=document.createElement("div"); d.className="brow";
+      var k=document.createElement("span"); k.className="brow-rank"; k.textContent=(i+1);
+      var t=document.createElement("span"); t.className="brow-t"; t.textContent="$"+r.t;
+      t.setAttribute("role","button"); t.setAttribute("tabindex","0"); t.title="Search "+r.t;
+      var n=document.createElement("span"); n.className="brow-n";
+      n.textContent=r.n+"×";
+      d.appendChild(k); d.appendChild(t); d.appendChild(n);
+      frag.appendChild(d);
+    });
+    body.innerHTML=""; body.appendChild(frag);
+    $("topFoot").textContent=c.events.toLocaleString()+" deployments · "+
+      c.distinct_tickers.toLocaleString()+" distinct tickers all-time";
+  }
+
+  function renderPairs(c){
+    var body=$("pairBody");
+    if(!c || !c.pairs || !c.pairs.length){
+      body.innerHTML='<div class="board-empty">Pair data unavailable.</div>'; return;
+    }
+    var frag=document.createDocumentFragment();
+    c.pairs.slice(0,60).forEach(function(r,i){
+      var d=document.createElement("div"); d.className="brow";
+      var k=document.createElement("span"); k.className="brow-rank"; k.textContent=(i+1);
+      var t=document.createElement("span"); t.className="brow-t"; t.textContent="$"+r.s;
+      t.style.cursor="default"; t.title=r.a;
+      var g=document.createElement("span"); g.className="tag tag-"+r.c; g.textContent=r.c;
+      var n=document.createElement("span"); n.className="brow-n";
+      n.textContent=r.n.toLocaleString();
+      var m=document.createElement("span");
+      var shAll=c.pair_events? r.n/c.pair_events : 0;
+      var sh7  =c.pair_events_7d? (r.w||0)/c.pair_events_7d : 0;
+      var diff=(sh7-shAll)*100;
+      m.className="mom "+(diff>=0.3?"mom-up":(diff<=-0.3?"mom-dn":"mom-flat"));
+      m.textContent=(diff>=0.3?"▲":(diff<=-0.3?"▼":"·"))+
+        (Math.abs(diff)>=0.05?Math.abs(diff).toFixed(1):"");
+      m.title="7-day share "+(sh7*100).toFixed(1)+"% vs all-time "+(shAll*100).toFixed(1)+"%";
+      d.appendChild(k); d.appendChild(t); d.appendChild(g); d.appendChild(n); d.appendChild(m);
+      frag.appendChild(d);
+    });
+    body.innerHTML=""; body.appendChild(frag);
+    $("pairFoot").textContent=c.pairs.length+" of "+
+      (c.pair_events||0).toLocaleString()+" pairings shown · stock = tokenised equity";
+  }
+
+  // one shared handler: clicking any ticker on either board runs it through the search
+  document.addEventListener("click",function(e){
+    var t=e.target;
+    if(t && t.classList && t.classList.contains("brow-t")){
+      elIn.value=t.textContent.replace(/^\$/,""); search();
+      elRec.scrollIntoView({behavior:"smooth",block:"center"});
+    }
+  });
+  document.addEventListener("keydown",function(e){
+    var t=e.target;
+    if((e.key==="Enter"||e.key===" ") && t && t.classList && t.classList.contains("brow-t")){
+      e.preventDefault(); t.click();
+    }
+  });
+  $("feedQ").addEventListener("input",renderFeed);
+
+  setInterval(function(){
+    if(document.hidden || !ticks.length) return;
+    var now=Math.floor(Date.now()/1000);
+    for(var i=0;i<ticks.length;i++) ticks[i].el.textContent=dur(ticks[i].exp-now);
+  },1000);
+
+  function loadCounts(){
+    if(COUNTS) return Promise.resolve();
+    return fetch("counts.json",{cache:"no-cache"}).then(function(r){
+      if(!r.ok) throw new Error("HTTP "+r.status); return r.json();
+    }).then(function(c){ COUNTS=c; })["catch"](function(){
+      var msg='<div class="board-empty">counts.json not found — run build_counts.py.</div>';
+      $("topBody").innerHTML=msg; $("pairBody").innerHTML=msg; $("freeBody").innerHTML=msg;
+    });
+  }
+
+  function useLive(list,note){
+    LIVE=collapse(list);
+    paintTape(LIVE.slice(0,28));
+    renderFeed();
+    if(note) $("feedFoot").textContent=note;
+    renderFree();
+  }
+
+  // ---- keeping the precomputed boards fresh -------------------------------------------------
+  // counts.json is a batch artefact and starts ageing the moment it is written. The window this
+  // page already fetches overlaps it, so every event newer than the file's `to_block` is merged in
+  // for FREE -- no extra request. That closes the gap between rebuilds, and covers a rebuild that
+  // never ran (a dropped cron leaves no error, so the page must not depend on one having fired).
+  //
+  // It can only close a gap the window actually spans. If the file predates the window's oldest
+  // block there is a hole we cannot see, and the page says so rather than presenting stale
+  // all-time numbers as current.
+  function mergeDelta(){
+    var st={merged:0,gap:false,age:0};
+    if(!COUNTS) return st;
+    st.age=Math.floor(Date.now()/1000)-(COUNTS.generated_at||0);
+    var cut=COUNTS.to_block||0;
+    if(WINDOW_LO===null){ st.nowindow=true; return st; }
+    if(WINDOW_LO>cut+1){ st.gap=true; return st; }        // unmergeable hole -- do not fake it
+    var d=ALLEV.filter(function(e){ return e.block>cut; });
+    if(!d.length) return st;
+
+    COUNTS.repeat=COUNTS.repeat||{};
+    var pairIx={};
+    (COUNTS.pairs||[]).forEach(function(r,i){ pairIx[r.a]=i; });
+    var dayIx={};
+    (COUNTS.per_day||[]).forEach(function(r,i){ dayIx[r.d]=i; });
+
+    d.forEach(function(e){
+      COUNTS.events=(COUNTS.events||0)+1;
+      // A ticker absent from `repeat` had 0 or 1 in the file, so this can under-count it by one --
+      // immaterial for a board whose cutoff is far above 2, and never an over-count.
+      COUNTS.repeat[e.ticker]=(COUNTS.repeat[e.ticker]||0)+1;
+      var pi=pairIx[e.quote];
+      if(pi!==undefined){ COUNTS.pairs[pi].n++; COUNTS.pairs[pi].w++; }
+      var day=fmtUTC(e.filed).slice(0,10);
+      if(dayIx[day]!==undefined) COUNTS.per_day[dayIx[day]].n++;
+      else { COUNTS.per_day.push({d:day,n:1}); dayIx[day]=COUNTS.per_day.length-1; }
+      st.merged++;
+    });
+    COUNTS.per_day.sort(function(a,b){ return a.d<b.d?-1:1; });
+    COUNTS.to_block=Math.max(cut,ALLEV.reduce(function(m,e){return Math.max(m,e.block);},cut));
+    return st;
+  }
+
+  function topFromRepeat(n){
+    var r=COUNTS&&COUNTS.repeat; if(!r) return [];
+    return Object.keys(r).map(function(k){return {t:k,n:r[k]};})
+      .sort(function(a,b){ return b.n-a.n || (a.t<b.t?-1:1); }).slice(0,n);
+  }
+
+  function renderFree(){
+    var body=$("freeBody");
+    if(!COUNTS||!COUNTS.repeat){ body.innerHTML='<div class="board-empty">Loading&hellip;</div>'; return; }
+    var held={}; LIVE.forEach(function(r){ held[r.ticker]=1; });
+    var rows=topFromRepeat(4000).filter(function(r){ return !held[r.t] && r.n>=2; }).slice(0,80);
+    if(!rows.length){ body.innerHTML='<div class="board-empty">Nothing to show.</div>'; return; }
+    var frag=document.createDocumentFragment();
+    rows.forEach(function(r,i){
+      var d=document.createElement("div"); d.className="brow";
+      var k=document.createElement("span"); k.className="brow-rank"; k.textContent=(i+1);
+      var t=document.createElement("span"); t.className="brow-t"; t.textContent="$"+r.t;
+      t.setAttribute("role","button"); t.setAttribute("tabindex","0"); t.title="Search "+r.t;
+      var n=document.createElement("span"); n.className="brow-n"; n.textContent=r.n+"×";
+      d.appendChild(k); d.appendChild(t); d.appendChild(n);
+      frag.appendChild(d);
+    });
+    body.innerHTML=""; body.appendChild(frag);
+    $("freeFoot").textContent="deployed 2×+ · free on-chain this second";
+  }
+
+  function sparkline(days){
+    if(!days||days.length<2) return "";
+    var w=300,h=44,n=days.length,max=1;
+    days.forEach(function(d){ if(d.n>max) max=d.n; });
+    var pts=days.map(function(d,i){
+      return [(i/(n-1))*w, h-(d.n/max)*(h-4)-2];
+    });
+    var line=pts.map(function(p,i){ return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1); }).join(" ");
+    var area=line+" L"+w+" "+h+" L0 "+h+" Z";
+    var last=pts[pts.length-1];
+    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" role="img" '+
+      'aria-label="Tokens deployed per day, last '+n+' days, peak '+max+'">'+
+      '<path d="'+area+'" fill="var(--mint-wash)"/>'+
+      '<path d="'+line+'" fill="none" stroke="var(--mint)" stroke-width="1.5" '+
+      'vector-effect="non-scaling-stroke" stroke-linejoin="round"/>'+
+      '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="2.5" fill="var(--mint)" '+
+      'vector-effect="non-scaling-stroke"/></svg>';
+  }
+
+  function renderStats(st){
+    var pd=(COUNTS&&COUNTS.per_day)||[];
+    var today=fmtUTC(Math.floor(Date.now()/1000)).slice(0,10);
+    var t=pd.filter(function(d){return d.d===today;})[0];
+    var last7=pd.slice(-7).reduce(function(a,d){return a+d.n;},0);
+    $("stToday").textContent=(t?t.n:0).toLocaleString();
+    $("st7").textContent=last7.toLocaleString();
+    $("stAll").textContent=((COUNTS&&COUNTS.events)||0).toLocaleString();
+    $("spark").innerHTML=sparkline(pd.slice(-21));
+
+    var el=$("fresh"); if(!el) return;
+    if(!COUNTS){ el.textContent=""; return; }
+    var age=Math.max(0,st.age), hrs=(age/3600);
+    var base="All-time boards rebuilt "+fmtUTC(COUNTS.generated_at)+
+             " ("+(hrs<1?Math.round(age/60)+" min":hrs.toFixed(1)+" h")+" ago)";
+    if(st.gap){
+      el.innerHTML=base+" · <b>stale: the gap since then is wider than the live window, "+
+        "so these counts are missing launches. Re-run build_counts.py.</b>";
+    }else if(st.nowindow){
+      el.textContent=base+" · live merge unavailable here, so these are the file's figures.";
+    }else if(st.merged){
+      el.textContent=base+" · "+st.merged.toLocaleString()+
+        " newer deployments merged live from the chain, so the figures above are current.";
+    }else{
+      el.textContent=base+" · up to date with the chain.";
+    }
+  }
+
+  function refreshCounts(){
+    var st=mergeDelta();
+    renderTop({top:topFromRepeat(250),events:COUNTS.events,distinct_tickers:COUNTS.distinct_tickers});
+    renderPairs(COUNTS);
+    renderFree();
+    renderStats(st);
+  }
+
+  function loadWindow(){
+    var cached=null;
+    try{
+      var raw=localStorage.getItem("amd.window");
+      if(raw){ var o=JSON.parse(raw); if(Date.now()-o.t<180000 && o.ev){ cached=o; } }
+    }catch(e){}
+    if(cached){ ALLEV=cached.ev; WINDOW_LO=cached.lo; useLive(ALLEV); return Promise.resolve(); }
+    return rpc("eth_blockNumber",[]).then(function(head){
+      var hi=parseInt(head,16), lo=hi-900000;   // ~25.4h at 0.1015 s/block, covers the 24h hold
+      WINDOW_LO=lo;
+      return rpc("eth_getLogs",[{fromBlock:"0x"+lo.toString(16),toBlock:"0x"+hi.toString(16),
+                                 address:FACTORY,topics:[TOPIC0]}]);
+    }).then(function(logs){
+      ALLEV=(logs||[]).map(decodeLog).filter(Boolean);
+      try{ localStorage.setItem("amd.window",
+             JSON.stringify({t:Date.now(),lo:WINDOW_LO,ev:ALLEV})); }catch(e){}
+      useLive(ALLEV);
+    });
+  }
+
+  function boot(){
+    var q=new URLSearchParams(location.search).get("t");
+    var run=function(){ if(q){ elIn.value=q.toUpperCase(); search(); } };
+    // If outbound calls are blocked, fail over to the snapshot up front rather than letting the
+    // first search surface a bare "Failed to fetch".
+    var w=loadWindow().then(run)["catch"](function(){
+      if(SNAP){ enterPreview(); run(); return; }
+      elTape.innerHTML='<span class="tape-empty">Registry unreachable — the node did not answer.</span>';
+      $("feedBody").innerHTML='<div class="board-empty">Registry unreachable — the node did not answer.</div>';
+      run();
+    });
+    // The merge needs BOTH the file and the window, so render the all-time boards only once each
+    // has settled -- otherwise they paint pre-merge and the freshness line contradicts them.
+    Promise.all([loadCounts(),w]).then(function(){ if(COUNTS) refreshCounts(); });
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
