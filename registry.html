@@ -324,7 +324,7 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
         <div class="stat"><div class="stat-k">Last 7 days</div><div class="stat-v" id="st7">&mdash;</div></div>
         <div class="stat"><div class="stat-k">All time</div><div class="stat-v" id="stAll">&mdash;</div></div>
         <div class="spark">
-          <div class="spark-cap">Tokens deployed per day</div>
+          <div class="spark-cap">Tokens deployed per day &middot; complete days</div>
           <div id="spark"></div>
         </div>
       </div>
@@ -764,10 +764,23 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
   });
   $("feedQ").addEventListener("input",renderFeed);
 
+  // A lapsed reservation must LEAVE the board. Left in place it pins itself at 00:00:00 at the top
+  // of "Expiring next" -- the soonest-first sort guarantees the dead ones collect exactly where the
+  // next live ones should be -- and the ticker silently stops being held without the page noticing.
   setInterval(function(){
     if(document.hidden || !ticks.length) return;
-    var now=Math.floor(Date.now()/1000);
-    for(var i=0;i<ticks.length;i++) ticks[i].el.textContent=dur(ticks[i].exp-now);
+    var now=Math.floor(Date.now()/1000), lapsed=0;
+    for(var i=0;i<ticks.length;i++){
+      var left=ticks[i].exp-now;
+      if(left<=0){ lapsed++; continue; }
+      ticks[i].el.textContent=dur(left);
+    }
+    if(lapsed){
+      LIVE=LIVE.filter(function(r){ return r.expires>now; });
+      paintTape(LIVE.slice(0,28));
+      renderFeed();
+      renderFree();          // a ticker that just lapsed is now genuinely free, so it moves boards
+    }
   },1000);
 
   function loadCounts(){
@@ -883,7 +896,11 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
     $("stToday").textContent=(t?t.n:0).toLocaleString();
     $("st7").textContent=last7.toLocaleString();
     $("stAll").textContent=((COUNTS&&COUNTS.events)||0).toLocaleString();
-    $("spark").innerHTML=sparkline(pd.slice(-21));
+    // Today is a PARTIAL bucket -- at 00:51 UTC it holds 3.6% of a day's launches, which plots as
+    // a cliff next to complete days and reads as a collapse in activity. Chart complete days only;
+    // the day in progress already has its own tile.
+    var complete=pd.filter(function(d){ return d.d!==today; });
+    $("spark").innerHTML=sparkline(complete.slice(-21));
 
     var el=$("fresh"); if(!el) return;
     if(!COUNTS){ el.textContent=""; return; }
@@ -903,8 +920,9 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
     }
   }
 
+  var _st=null;
   function refreshCounts(){
-    var st=mergeDelta();
+    var st=_st=mergeDelta();
     renderTop({top:topFromRepeat(250),events:COUNTS.events,distinct_tickers:COUNTS.distinct_tickers});
     renderPairs(COUNTS);
     renderFree();
@@ -930,6 +948,9 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
       useLive(ALLEV);
     });
   }
+
+  // The freshness line prints an age, so it is wrong one minute after it renders unless it re-runs.
+  setInterval(function(){ if(!document.hidden && _st && COUNTS) renderStats(_st); }, 60000);
 
   function boot(){
     var q=new URLSearchParams(location.search).get("t");
