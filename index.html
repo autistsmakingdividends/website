@@ -219,6 +219,11 @@ h1 .mint{color:var(--mint)}
 .fr-v{font-family:var(--mono);font-size:13px;color:var(--ink-2);flex:1 1 240px;word-break:break-all}
 .fr-v b{color:var(--ink);font-weight:700}
 .pending{color:var(--held)}
+.copy{margin-left:10px;background:transparent;border:1px solid var(--rule-bright);color:var(--ink-dim);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  padding:3px 8px;cursor:pointer;vertical-align:middle}
+.copy:hover{border-color:var(--mint);color:var(--mint)}
+.copy.done{border-color:var(--mint);color:var(--mint)}
 
 /* ---------- footer ---------- */
 .foot{padding:44px 0 68px;color:var(--ink-dim);font-size:13px}
@@ -269,6 +274,7 @@ h1 .mint{color:var(--mint)}
           </div>
           <div class="cta">
             <a class="btn" href="https://app.long.xyz/" target="_blank" rel="noopener noreferrer">Trade $AMD</a>
+            <a class="btn ghost" href="https://dexscreener.com/robinhood/0x01ce94a2b9c4cfb5133b75b80bd91e63e158bc208870bd75c345ec48e88e4ece" target="_blank" rel="noopener noreferrer">Chart</a>
             <a class="btn ghost" href="registry.html">Ticker registry</a>
             <a class="btn ghost keepcase" href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank">Follow @AMD_on_RH</a>
           </div>
@@ -319,7 +325,10 @@ h1 .mint{color:var(--mint)}
         <div class="fr"><div class="fr-k">Ticker</div><div class="fr-v"><b>$AMD</b></div></div>
         <div class="fr"><div class="fr-k">Chain</div><div class="fr-v">Robinhood Chain &middot; id 4663</div></div>
         <div class="fr"><div class="fr-k">Launchpad</div><div class="fr-v">Long.xyz</div></div>
-        <div class="fr"><div class="fr-k">Contract address</div><div class="fr-v pending">Pending incorporation &mdash; replace on launch</div></div>
+        <div class="fr"><div class="fr-k">Contract address</div><div class="fr-v"><a href="https://robinhoodchain.blockscout.com/address/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18" target="_blank" rel="noopener noreferrer">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</a><button class="copy" type="button" data-copy="0x68f8f61897d17abd10ebc4eaf483e4c189f51e18">Copy</button></div></div>
+        <div class="fr"><div class="fr-k">Paired against</div><div class="fr-v"><a href="https://robinhoodchain.blockscout.com/address/0x86923f96303d656e4aa86d9d42d1e57ad2023fdc" target="_blank" rel="noopener noreferrer">AMD</a> &mdash; the tokenised Advanced Micro Devices stock</div></div>
+        <div class="fr"><div class="fr-k">Chart</div><div class="fr-v"><a href="https://dexscreener.com/robinhood/0x01ce94a2b9c4cfb5133b75b80bd91e63e158bc208870bd75c345ec48e88e4ece" target="_blank" rel="noopener noreferrer">DEX Screener</a></div></div>
+        <div class="fr"><div class="fr-k">Supply</div><div class="fr-v">1,000,000,000 &middot; 18 decimals</div></div>
         <div class="fr"><div class="fr-k">Dividend policy</div><div class="fr-v">Classified</div></div>
         <div class="fr"><div class="fr-k">Risk disclosure</div><div class="fr-v">Total</div></div>
         <div class="fr"><div class="fr-k">Investor relations</div><div class="fr-v"><a href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank">@AMD_on_RH</a></div></div>
@@ -480,6 +489,28 @@ h1 .mint{color:var(--mint)}
   // the registry reads. If it fails the page is unaffected -- the note simply stays hidden.
   var RPC="https://rpc.mainnet.chain.robinhood.com";
   var FACTORY="0x22e99278308b393ea1260859b181ad7e78f5eeed";
+  var OURS="0x68f8f61897d17abd10ebc4eaf483e4c189f51e18";
+
+  // copy-to-clipboard on the contract address
+  document.addEventListener("click",function(e){
+    var b=e.target.closest && e.target.closest(".copy");
+    if(!b) return;
+    var text=b.getAttribute("data-copy")||"";
+    var done=function(){ b.textContent="Copied"; b.classList.add("done");
+      setTimeout(function(){ b.textContent="Copy"; b.classList.remove("done"); },1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done)["catch"](function(){ fallback(text,done); });
+    } else fallback(text,done);
+  });
+  function fallback(text,done){
+    try{
+      var t=document.createElement("textarea");
+      t.value=text; t.setAttribute("readonly","");
+      t.style.position="fixed"; t.style.opacity="0";
+      document.body.appendChild(t); t.select();
+      document.execCommand("copy"); document.body.removeChild(t); done();
+    }catch(e){}
+  }
   var el=document.getElementById("registrar"), txt=document.getElementById("regText");
   if(!el||!txt) return;
   var timer=null;
@@ -510,6 +541,8 @@ h1 .mint{color:var(--mint)}
     var now=Math.floor(Date.now()/1000);
     el.hidden=false;
     if(exp>now){
+      // the record also names the token holding it, so the note can tell OUR filing from a stranger's
+      var mine=(h.slice(24,64).toLowerCase()===OURS.slice(2).toLowerCase());
       var tick=function(){
         var left=exp-Math.floor(Date.now()/1000);
         if(left<=0){
@@ -518,8 +551,12 @@ h1 .mint{color:var(--mint)}
             '<a href="registry.html?t=AMD">Verify</a>.';
           return;
         }
-        txt.innerHTML='The <b>$AMD</b> ticker is <b class="reg-held">held</b> on Long until '+fmtUTC(exp)+
-          ' &mdash; <b class="reg-held">'+dur(left)+'</b> remaining. <a href="registry.html?t=AMD">Track it</a>.';
+        txt.innerHTML=(mine
+          ? 'We hold the <b>$AMD</b> ticker until '+fmtUTC(exp)+
+            ' &mdash; <b class="reg-held">'+dur(left)+'</b> remaining, then it is anyone\'s again. '
+          : 'The <b>$AMD</b> ticker is <b class="reg-held">held</b> on Long until '+fmtUTC(exp)+
+            ' &mdash; <b class="reg-held">'+dur(left)+'</b> remaining. ')
+          +'<a href="registry.html?t=AMD">Track it</a>.';
       };
       tick(); timer=setInterval(tick,1000);
     }else{
