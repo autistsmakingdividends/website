@@ -198,6 +198,21 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
 .stat-v{font-family:var(--mono);font-weight:700;font-size:21px;color:var(--ink);margin-top:4px;font-variant-numeric:tabular-nums}
 .spark{padding:12px 20px;display:flex;flex-direction:column;justify-content:center;min-width:0}
 .spark svg{width:100%;height:44px;display:block;overflow:visible}
+#spark{position:relative;cursor:crosshair;outline-offset:3px}
+.sp-cross{position:absolute;top:0;bottom:0;width:1px;background:var(--rule-bright);pointer-events:none;opacity:0}
+.sp-dot{position:absolute;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;
+  background:var(--mint);box-shadow:0 0 0 2px var(--panel);pointer-events:none;opacity:0}
+.sp-tip{position:absolute;transform:translate(-50%,-100%);margin-top:-11px;background:#000;
+  border:1px solid var(--rule-bright);padding:7px 10px;pointer-events:none;opacity:0;
+  white-space:nowrap;z-index:5}
+.sp-tip b{display:block;font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink);
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.sp-tip i{display:block;font-family:var(--mono);font-style:normal;font-size:10px;letter-spacing:.09em;
+  color:var(--ink-dim);text-transform:uppercase;margin-top:3px}
+#spark.on .sp-cross,#spark.on .sp-dot,#spark.on .sp-tip{opacity:1}
+@media (prefers-reduced-motion:no-preference){
+  .sp-cross,.sp-dot,.sp-tip{transition:opacity .12s ease}
+}
 .spark-cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-dim);text-transform:uppercase;margin-bottom:6px}
 .fresh{font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--ink-dim);margin-top:14px}
 .fresh b{color:var(--held);font-weight:700}
@@ -325,7 +340,13 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
         <div class="stat"><div class="stat-k">All time</div><div class="stat-v" id="stAll">&mdash;</div></div>
         <div class="spark">
           <div class="spark-cap">Tokens deployed per day &middot; complete days</div>
-          <div id="spark"></div>
+          <div id="spark" tabindex="0" role="img"
+               aria-label="Tokens deployed per day. Use arrow keys to read each day.">
+            <div id="sparkSvg"></div>
+            <div class="sp-cross" id="spCross"></div>
+            <div class="sp-dot" id="spDot"></div>
+            <div class="sp-tip" id="spTip"><b></b><i></i></div>
+          </div>
         </div>
       </div>
 
@@ -342,8 +363,8 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
 
         <div class="board">
           <div class="board-hd">
-            <div class="board-t">Contested &amp; free</div>
-            <div class="board-s">Proven names nobody holds right now</div>
+            <div class="board-t">Contested &amp; maybe free</div>
+            <div class="board-s">Proven names with no on&#8209;chain hold right now</div>
           </div>
           <div class="board-body" id="freeBody"><div class="board-empty">Loading&hellip;</div></div>
           <div class="board-ft" id="freeFoot"></div>
@@ -783,6 +804,56 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
     }
   },1000);
 
+  // Hover layer. A sparkline is a line chart, so it gets a crosshair that snaps to the nearest day
+  // rather than asking anyone to aim at a 1.5px stroke; keyboard gets the same readout as pointer.
+  (function bindSpark(){
+    var box=$("spark"), cross=$("spCross"), dot=$("spDot"), tip=$("spTip");
+    if(!box||!cross||!dot||!tip) return;
+    var val=tip.querySelector("b"), lab=tip.querySelector("i");
+    var idx=null;
+    var MONTH=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+    function label(iso){
+      var p=iso.split("-");
+      return p[2].replace(/^0/,"")+" "+(MONTH[parseInt(p[1],10)-1]||p[1])+" "+p[0];
+    }
+    function show(i){
+      if(!_spark) return;
+      var n=_spark.days.length;
+      i=Math.max(0,Math.min(n-1,i)); idx=i;
+      var d=_spark.days[i];
+      var r=box.getBoundingClientRect();
+      var x=(n===1?0:i/(n-1))*r.width;
+      var ySvg=_spark.h-(d.n/_spark.max)*(_spark.h-4)-2;
+      var y=(ySvg/_spark.h)*r.height;
+      cross.style.left=x+"px";
+      dot.style.left=x+"px"; dot.style.top=y+"px";
+      // untrusted-data rule: these strings go in as text, never as markup
+      val.textContent=d.n.toLocaleString();
+      lab.textContent=label(d.d);
+      tip.style.left=Math.max(38,Math.min(r.width-38,x))+"px";
+      tip.style.top=y+"px";
+      box.classList.add("on");
+    }
+    function hide(){ idx=null; box.classList.remove("on"); }
+
+    box.addEventListener("pointermove",function(e){
+      if(!_spark) return;
+      var r=box.getBoundingClientRect();
+      var f=r.width?(e.clientX-r.left)/r.width:0;
+      show(Math.round(Math.max(0,Math.min(1,f))*(_spark.days.length-1)));
+    });
+    box.addEventListener("pointerleave",hide);
+    box.addEventListener("blur",hide);
+    box.addEventListener("focus",function(){ if(_spark) show(idx===null?_spark.days.length-1:idx); });
+    box.addEventListener("keydown",function(e){
+      if(!_spark) return;
+      if(e.key==="ArrowRight"){ e.preventDefault(); show((idx===null?_spark.days.length-1:idx)+1); }
+      else if(e.key==="ArrowLeft"){ e.preventDefault(); show((idx===null?_spark.days.length-1:idx)-1); }
+      else if(e.key==="Escape"){ hide(); }
+    });
+  })();
+
   function loadCounts(){
     if(COUNTS) return Promise.resolve();
     return fetch("counts.json",{cache:"no-cache"}).then(function(r){
@@ -866,13 +937,16 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
       frag.appendChild(d);
     });
     body.innerHTML=""; body.appendChild(frag);
-    $("freeFoot").textContent="deployed 2×+ · free on-chain this second";
+    $("freeFoot").textContent="deployed 2×+ · no on-chain hold · Long may still be holding one for someone mid-launch";
   }
 
+  var _spark=null;                  // {days,max,w,h} — geometry shared with the hover layer
+
   function sparkline(days){
-    if(!days||days.length<2) return "";
+    if(!days||days.length<2){ _spark=null; return ""; }
     var w=300,h=44,n=days.length,max=1;
     days.forEach(function(d){ if(d.n>max) max=d.n; });
+    _spark={days:days,max:max,w:w,h:h};
     var pts=days.map(function(d,i){
       return [(i/(n-1))*w, h-(d.n/max)*(h-4)-2];
     });
@@ -900,7 +974,7 @@ code{font-family:var(--mono);font-size:.88em;color:var(--mint);word-break:break-
     // a cliff next to complete days and reads as a collapse in activity. Chart complete days only;
     // the day in progress already has its own tile.
     var complete=pd.filter(function(d){ return d.d!==today; });
-    $("spark").innerHTML=sparkline(complete.slice(-21));
+    $("sparkSvg").innerHTML=sparkline(complete.slice(-21));
 
     var el=$("fresh"); if(!el) return;
     if(!COUNTS){ el.textContent=""; return; }
