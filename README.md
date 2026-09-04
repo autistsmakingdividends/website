@@ -8,6 +8,8 @@ onto Netlify / Cloudflare Pages / Vercel / GitHub Pages and it is live.
 | `index.html` | Homepage — incorporation notice, manifesto, business model, Q3 results, internal memo, org chart, departments, approved terminology, the filing. |
 | `registry.html` | **Office of Ticker Reservations** — the ticker-expiry tool. |
 | `logo-96.png`, `logo-256.png` | The mark, cropped from `../amd.png` and downsampled. |
+| `amd-intro.mp4` | 26s corporate film, 960x960 H.264/AAC, 19.8 MB. Faststart, so it streams. |
+| `intro-poster.png` | Poster frame so the video only downloads when someone presses play. |
 | `counts.json` | All-time boards: per-ticker deploy counts, quote-asset pairings, daily volume. |
 | `build_counts.py` | Full-history scan that writes `counts.json`. Stdlib-only, runs in CI. |
 | `../.github/workflows/counts.yml` | Rebuilds `counts.json` every 3h and commits it. |

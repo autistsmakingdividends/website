@@ -119,6 +119,18 @@ h1 .mint{color:var(--mint)}
 .reg-held{color:var(--held)}
 .reg-free{color:var(--mint)}
 
+/* ---------- corporate film ---------- */
+.film{border-bottom:1px solid var(--rule);background:var(--panel-2);padding:64px 0}
+.film-in{display:grid;grid-template-columns:1fr;gap:34px;align-items:center}
+@media(min-width:860px){.film-in{grid-template-columns:1fr 460px}}
+.film h2{margin-bottom:14px}
+.film p{color:var(--ink-2);max-width:46ch;margin:0 0 12px}
+.film-meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.15em;color:var(--ink-dim);
+  text-transform:uppercase;margin-top:18px}
+.film-frame{border:1px solid var(--rule-bright);background:#000;position:relative;
+  aspect-ratio:1/1;justify-self:center;width:100%;max-width:460px}
+.film-frame video{width:100%;height:100%;display:block;object-fit:cover;background:#000}
+
 /* ---------- manifesto ---------- */
 .manifesto{position:relative;border-bottom:1px solid var(--rule);background:var(--panel-2);padding:88px 0;overflow:hidden}
 .manifesto .seal{position:absolute;right:-70px;top:50%;transform:translateY(-50%);width:420px;opacity:.05;pointer-events:none}
@@ -231,6 +243,7 @@ h1 .mint{color:var(--mint)}
       </span>
     </a>
     <nav class="mast-nav">
+      <a class="jump" href="#film">Film</a>
       <a class="jump" href="#model">Model</a>
       <a class="jump" href="#results">Results</a>
       <a class="jump" href="#structure">Structure</a>
@@ -265,6 +278,26 @@ h1 .mint{color:var(--mint)}
       <div class="registrar" id="registrar" hidden>
         <div class="reg-k">Registrar&rsquo;s note</div>
         <div class="reg-v" id="regText"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="film" id="film">
+    <div class="wrap film-in">
+      <div>
+        <div class="sec-no">Corporate film</div>
+        <h2>An introduction</h2>
+        <p>Management commissioned a short film to explain the institution to prospective shareholders.</p>
+        <p>It does not explain the institution.</p>
+        <div class="film-meta">26 seconds &middot; sound on &middot; 19.8 MB</div>
+      </div>
+      <div class="film-frame">
+        <video controls playsinline preload="none" poster="intro-poster.png"
+               width="960" height="960" aria-label="AMD corporate introduction film">
+          <source src="amd-intro.mp4" type="video/mp4">
+          Your browser cannot play this video.
+          <a href="amd-intro.mp4">Download it instead</a>.
+        </video>
       </div>
     </div>
   </section>
