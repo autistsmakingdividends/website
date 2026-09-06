@@ -22,6 +22,19 @@ intentions, and "available on-chain" does not imply "the app will let you have i
 FAIL LOUD. `rh_chain.get_logs` bisects on a range/size error and raises on anything else; a chunk
 that silently returned nothing would undercount specific tickers rather than erroring, so coverage
 is asserted before anything is written (D-RANK).
+
+WHY THIS IS INCREMENTAL (added 2026-09-06)
+Every scheduled run from 2026-09-06T00:38Z failed on `HTTP 429`, after two clean days. Measured
+against the live node: `eth_blockNumber` passes 25/25 at 0.2s pacing while `eth_getLogs` dies on
+the THIRD call, and once throttled the lockout lasts 2-3 MINUTES -- so the budget is method-weighted
+and holds roughly a dozen getLogs. A scan from GENESIS needs ~48 of them and cannot ever fit.
+
+So the full history is no longer rescanned. `counts_state.json` carries every ticker's running
+count next to the last block already scanned, and each run reads only the blocks since. That is
+one or two getLogs per run instead of 48. The state file must hold counts for EVERY ticker, not
+just the ones that reach a board: `repeat` keeps only n>=2, and merging a new deployment onto a
+ticker missing from state would score it 1 instead of 2 -- a silent undercount of exactly the
+tickers that just became interesting. Pass --full to rescan from GENESIS (slow, patient pacing).
 """
 import collections, json, os, sys, time, urllib.error, urllib.request
 
@@ -43,7 +56,11 @@ MIN_INTERVAL = float(os.environ.get("RPC_MIN_INTERVAL", "0.2"))
 _TRANSIENT = ("connection refused", "eof", "dial tcp", "context deadline", "connection reset",
               "no such host", "i/o timeout", "bad gateway", "service unavailable",
               "internal server err", "try again", "temporarily unavailable", "too many requests")
-_SPLITTY = ("more than", "limit exceeded", "log query timed out", "response size", "too large")
+# NB "exceeds limit" is this node's own phrasing ("logs matched by query exceeds limit of
+# 10000") and does NOT contain the substring "limit exceeded" -- without it the cap raises
+# instead of bisecting.
+_SPLITTY = ("more than", "limit exceeded", "exceeds limit", "log query timed out",
+            "response size", "too large")
 _last = [0.0]
 _calls = [0]
 
@@ -52,7 +69,10 @@ class RpcError(RuntimeError):
     """A JSON-RPC error object. Distinct from a transport failure: it is an answer."""
 
 
-def rpc(method, params, tries=7):
+_BACKOFF_429 = (20, 45, 90, 150, 240, 240, 240, 240, 240)
+
+
+def rpc(method, params, tries=10):
     body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode()
     for attempt in range(tries):
         gap = MIN_INTERVAL - (time.time() - _last[0])
@@ -62,6 +82,23 @@ def rpc(method, params, tries=7):
         _calls[0] += 1
         try:
             raw = urllib.request.urlopen(urllib.request.Request(RPC, body, UA), timeout=90).read()
+        except urllib.error.HTTPError as e:
+            # A 429 is a THROTTLE, not an answer: retry the SAME request, but slowly. The old
+            # ladder (1.5s..9s, ~31s over 7 tries) could not outlast a 2-3 minute lockout, so it
+            # burned every retry in under a minute and raised. Honour Retry-After when sent.
+            if e.code == 429 and attempt < tries - 1:
+                hdr = e.headers.get("Retry-After") if e.headers else None
+                try:
+                    wait = float(hdr)
+                except (TypeError, ValueError):
+                    wait = _BACKOFF_429[min(attempt, len(_BACKOFF_429) - 1)]
+                print(f"    429 throttled -- waiting {wait:.0f}s", file=sys.stderr, flush=True)
+                time.sleep(wait)
+                continue
+            if attempt == tries - 1:
+                raise
+            time.sleep(1.5 * (attempt + 1))
+            continue
         except (urllib.error.URLError, OSError):
             if attempt == tries - 1:
                 raise
@@ -150,17 +187,54 @@ def decode(log):
             "filed": int(w[3], 16), "expires": int(w[4], 16)}
 
 
+STATE = "counts_state.json"
+PBD_DAYS = 12                           # per-day pair buckets retained; only 7 are ever read
+
+
+def load_state(path, full):
+    """Prior aggregates, or an empty slate for a full rescan.
+
+    `t` maps EVERY ticker to [count, first_filed, last_filed] -- not just the ones that reach a
+    board. Storing only `repeat` (n>=2) would make a ticker's second deployment merge onto nothing
+    and score 1, silently undercounting exactly the tickers that just became contested.
+    """
+    if full or not os.path.exists(path):
+        return {"to_block": GENESIS - 1, "events": 0, "t": {}, "pd": {}, "pt": {}, "pbd": {}}
+    st = json.load(open(path))
+    for k in ("to_block", "events", "t", "pd", "pt", "pbd"):
+        if k not in st:
+            raise RuntimeError(f"{path} is missing {k!r} -- refusing to merge onto a partial state")
+    return st
+
+
 def main():
+    full = "--full" in sys.argv
+    here = os.path.dirname(os.path.abspath(__file__))
+    st = load_state(os.path.join(here, STATE), full)
+
     stocks = stock_map()
     print(f"issuer lists {len(stocks)} tokenised-stock contracts", file=sys.stderr)
 
     head = int(rpc("eth_blockNumber", []), 16)
-    counts, first, last = {}, {}, {}
-    pairs, pairs7 = collections.Counter(), collections.Counter()
-    per_day = collections.Counter()
-    events, covered, b = 0, 0, GENESIS
+    start = GENESIS if full else max(GENESIS, st["to_block"] + 1)
     now = int(time.time())
     t0 = time.time()
+
+    counts = {k: v[0] for k, v in st["t"].items()}
+    first = {k: v[1] for k, v in st["t"].items()}
+    last = {k: v[2] for k, v in st["t"].items()}
+    pairs = collections.Counter(st["pt"])
+    per_day = collections.Counter(st["pd"])
+    pbd = {d: collections.Counter(v) for d, v in st["pbd"].items()}
+    events = st["events"]
+    fresh = 0
+
+    if start > head:
+        print(f"no new blocks (state at {st['to_block']:,}, head {head:,})", file=sys.stderr)
+    else:
+        print(f"scanning {start:,}-{head:,} ({head-start+1:,} blocks, "
+              f"{'FULL' if full else 'incremental'})", file=sys.stderr)
+    covered, b = 0, start
     while b <= head:
         hi = min(b + CHUNK, head)
         logs = get_logs({"fromBlock": hex(b), "toBlock": hex(hi),
@@ -174,16 +248,25 @@ def main():
             if t not in first or r["filed"] < first[t]: first[t] = r["filed"]
             if t not in last or r["filed"] > last[t]:   last[t] = r["filed"]
             pairs[r["quote"]] += 1
-            if r["filed"] > now - 7 * 86400:
-                pairs7[r["quote"]] += 1
-            per_day[time.strftime("%Y-%m-%d", time.gmtime(r["filed"]))] += 1
+            day = time.strftime("%Y-%m-%d", time.gmtime(r["filed"]))
+            per_day[day] += 1
+            pbd.setdefault(day, collections.Counter())[r["quote"]] += 1
             events += 1
+            fresh += 1
         covered += hi - b + 1
         print(f"  {b:,}-{hi:,}  {len(logs):>5} logs  (total {events:,})", file=sys.stderr, flush=True)
         b = hi + 1
 
-    want = head - GENESIS + 1
+    want = head - start + 1 if head >= start else 0
     assert covered == want, f"COVERAGE GAP: scanned {covered:,} of {want:,} blocks"
+
+    # `pairs7` was a rolling 168h window when every run rescanned all history and had each event's
+    # own `filed` to hand. Aggregated state keeps per-day buckets instead, so it is now the last 7
+    # UTC DAYS. Slightly different edge, same question, and stable across runs.
+    recent = sorted(pbd)[-7:]
+    pairs7 = collections.Counter()
+    for d in recent:
+        pairs7.update(pbd[d])
 
     # classify quote assets: a Long-deployed token's address ends 1e18, a stock is in the issuer list
     rows = []
@@ -193,7 +276,7 @@ def main():
         elif addr in stocks:
             sym, cls = stocks[addr], "stock"
         else:
-            sym = erc20_symbol(addr) or addr[:10] + "…"
+            sym = erc20_symbol(addr) or addr[:10] + "\u2026"
             cls = "token" if addr.endswith("1e18") else "other"
         rows.append({"a": addr, "s": sym, "c": cls, "n": n, "w": pairs7.get(addr, 0)})
 
@@ -205,7 +288,8 @@ def main():
     repeat = {t: n for t, n in counts.items() if n >= 2}
 
     out = {
-        "generated_at": now, "from_block": GENESIS, "to_block": head, "blocks": want,
+        "generated_at": now, "from_block": GENESIS, "to_block": head,
+        "blocks": head - GENESIS + 1,
         "events": events, "distinct_tickers": len(counts),
         "pair_events": sum(pairs.values()), "pair_events_7d": sum(pairs7.values()),
         "top": [{"t": t, "n": n, "first": first[t], "last": last[t]} for t, n in top[:TOP_N]],
@@ -213,12 +297,26 @@ def main():
         "per_day": [{"d": d, "n": n} for d, n in sorted(per_day.items())[-DAYS:]],
         "pairs": rows,
     }
-    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "counts.json")
+    p = os.path.join(here, "counts.json")
     json.dump(out, open(p, "w"), separators=(",", ":"))
 
-    print(f"\nscanned {want:,} blocks in {time.time()-t0:.0f}s, {_calls[0]} calls", file=sys.stderr)
+    # Write state only after counts.json lands, and only via a temp file: a half-written state that
+    # claims a to_block it never scanned would skip those blocks forever, with no error (A10).
+    st_out = {"to_block": head, "events": events,
+              "t": {k: [counts[k], first[k], last[k]] for k in counts},
+              "pd": dict(per_day), "pt": dict(pairs),
+              "pbd": {d: dict(pbd[d]) for d in sorted(pbd)[-PBD_DAYS:]}}
+    sp = os.path.join(here, STATE)
+    tmp = sp + ".partial"
+    with open(tmp, "w") as f:
+        json.dump(st_out, f, separators=(",", ":"), sort_keys=True)
+    os.replace(tmp, sp)
+
+    print(f"\nscanned {want:,} new blocks in {time.time()-t0:.0f}s, {_calls[0]} calls, "
+          f"{fresh:,} new deployments", file=sys.stderr)
     print(f"{events:,} deployments, {len(counts):,} distinct tickers, "
           f"{len(pairs):,} distinct quote assets -> {p} ({os.path.getsize(p):,} b)", file=sys.stderr)
+    print(f"state -> {sp} ({os.path.getsize(sp):,} b), to_block {head:,}", file=sys.stderr)
     print("top tickers:", ", ".join(f"{t}x{n}" for t, n in top[:8]), file=sys.stderr)
     print("top pairs:  ", ", ".join(f"{r['s']}({r['c']}) {r['n']}" for r in rows[:8]), file=sys.stderr)
     print(f"repeat tickers (n>=2): {len(repeat):,}", file=sys.stderr)

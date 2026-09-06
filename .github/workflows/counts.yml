@@ -14,7 +14,13 @@ name: registry-counts
 # span, it says so on the page instead of presenting stale counts as current. This workflow keeps
 # the gap small; the page keeps it honest.
 #
-# Cheap enough to run often: ~55 RPC calls and ~60 seconds against a free, keyless endpoint.
+# INCREMENTAL since 2026-09-06. It used to rescan all history every run (~48 eth_getLogs). The node
+# now budgets that method at roughly a dozen calls before a 2-3 minute lockout, so every scheduled
+# run failed on HTTP 429 from 2026-09-06T00:38Z. `counts_state.json` carries the running totals and
+# the last block scanned, so a run reads only the blocks since -- ONE eth_getLogs, ~10 calls total.
+#
+# That makes counts_state.json load-bearing: if it is not committed, every run starts from genesis
+# again and the 429s come straight back.
 
 on:
   schedule:
@@ -22,9 +28,9 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  # cancel-in-progress TRUE: the scan is idempotent and rebuilds from genesis every time, so a
-  # cancelled run loses nothing and a fresh one is always strictly better than a stalled one.
-  # (Contrast a collector whose data cannot be backfilled, where a dropped restart is real loss.)
+  # cancel-in-progress TRUE: state is written and committed only at the very end, so a cancelled
+  # run commits nothing and the next one resumes from the last committed to_block. Nothing is lost
+  # and a fresh run is always better than a stalled one.
   group: registry-counts
   cancel-in-progress: true
 
@@ -46,7 +52,9 @@ jobs:
       # this step cannot break on a dependency.
       - name: rebuild counts.json
         env:
-          RPC_MIN_INTERVAL: '0.2'
+          # 0.2s is what the node throttles; 1.5s sustained a full 48-chunk scan cleanly when
+          # measured on 2026-09-06. The helper also backs off properly on a 429 now.
+          RPC_MIN_INTERVAL: '1.5'
         run: python3 build_counts.py
 
       # Verify the ARTEFACT, not the exit code. A scan that returns junk exits 0 just as happily as
@@ -68,6 +76,15 @@ jobs:
               fails.append(f"per_day has nothing for {today}")
           age = time.time() - c["generated_at"]
           if age > 3600:                     fails.append(f"generated_at is {age/60:.0f} min old")
+          # The state file is what keeps the next run cheap -- verify it exists and agrees.
+          try:
+              st = json.load(open("counts_state.json"))
+              if st["to_block"] != c["to_block"]:
+                  fails.append(f"state to_block {st['to_block']} != counts {c['to_block']}")
+              if len(st["t"]) != c["distinct_tickers"]:
+                  fails.append(f"state has {len(st['t'])} tickers, counts says {c['distinct_tickers']}")
+          except Exception as e:
+              fails.append(f"counts_state.json unreadable: {e}")
           if fails:
               print("REFUSING TO COMMIT:", "; ".join(fails)); sys.exit(1)
           print(f"ok: {c['events']:,} deployments, {c['distinct_tickers']:,} tickers, "
@@ -78,10 +95,14 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- counts.json; then
-            echo "counts.json unchanged — nothing to commit"
+          if git diff --quiet -- counts.json counts_state.json; then
+            echo "nothing changed — nothing to commit"
           else
-            git add counts.json
+            # counts_state.json MUST go with it: without it the next run rescans from genesis.
+            git add counts.json counts_state.json
             git commit -m "counts: refresh all-time boards [skip ci]"
+            git fetch origin main
+            git rebase origin/main || { git checkout --ours counts.json counts_state.json; \
+                                        git add counts.json counts_state.json; git rebase --continue; }
             git push
           fi
