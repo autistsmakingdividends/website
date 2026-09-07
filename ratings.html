@@ -499,9 +499,14 @@ const usd = v => v==null ? '—' : v>=1e6 ? '$'+(v/1e6).toFixed(v%1e6?1:0)+'M'
 const pct = v => v==null ? '—' : v.toFixed(2)+'%';
 let EQ = [], OT = [];
 
-document.getElementById('stamp').textContent =
-  ROWS.length.toLocaleString() + ' issuers under surveillance · quoted ' +
-  new Date(DATA.at*1000).toISOString().slice(0,16).replace('T',' ') + 'Z';
+/* Must NOT run at load. DATA is null until the fetch resolves, so dereferencing it here
+   throws before boot() is ever reached and takes the whole script with it -- every
+   section renders empty and the only visible symptom is the word "Loading". */
+function renderStamp(){
+  document.getElementById('stamp').textContent =
+    ROWS.length.toLocaleString() + ' issuers under surveillance · quoted ' +
+    new Date(DATA.at*1000).toISOString().slice(0,16).replace('T',' ') + 'Z';
+}
 
 /* House view, by band. Written once and applied by rule, so a rating change moves the comment
    with it rather than leaving a stale compliment attached to a collapsing book. */
@@ -856,7 +861,7 @@ document.querySelectorAll('thead th').forEach(th=>{
 });
 [q,kf,bf,pf,gf].forEach(el=>el.addEventListener('input',renderTable));
 
-function render(){ buildPlatforms(); renderVerdict(); renderCards(); renderScreen();
-                   renderStrip(); renderTable(); }
+function render(){ renderStamp(); buildPlatforms(); renderVerdict(); renderCards();
+                   renderScreen(); renderStrip(); renderTable(); }
 boot();
 </script>
