@@ -55,6 +55,17 @@ img{max-width:100%}
 .brand img{width:46px;height:46px;display:block;flex:none}
 .brand-txt{font-weight:900;font-size:21px;letter-spacing:.11em;line-height:1.1}
 .brand-sub{font-family:var(--mono);font-size:11.5px;letter-spacing:.045em;color:var(--ink-2);white-space:nowrap}
+.brand-block{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* Sits OUTSIDE the brand anchor on purpose: an address people want to copy should not
+   navigate when they drag across it, and an interactive element nested in an <a> is
+   invalid anyway. The left margin is the logo width plus the brand gap (46+12), so it
+   lines up under the wordmark rather than under the logo. */
+.brand-ca{margin-left:58px;font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;
+  color:var(--ink-dim);white-space:nowrap;user-select:all;-webkit-user-select:all;
+  overflow:hidden;text-overflow:ellipsis}
+@media(max-width:640px){
+  .brand-ca{margin-left:50px;font-size:8px;letter-spacing:0}
+}
 .mast-nav{display:flex;gap:20px;font-family:var(--mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase}
 .mast-nav a{color:var(--ink-dim)}
 .mast-nav a:hover{color:var(--mint);text-decoration:none}
@@ -240,13 +251,16 @@ h1 .mint{color:var(--mint)}
 
 <header class="mast">
   <div class="wrap mast-in">
-    <a class="brand" href="index.html">
-      <img src="logo-96.png" alt="" width="34" height="34">
-      <span>
-        <span class="brand-txt">AMD</span><br>
-        <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
-      </span>
-    </a>
+    <div class="brand-block">
+      <a class="brand" href="index.html">
+            <img src="logo-96.png" alt="" width="34" height="34">
+            <span>
+              <span class="brand-txt">AMD</span><br>
+              <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
+            </span>
+          </a>
+      <span class="brand-ca" title="$AMD contract on Robinhood Chain">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</span>
+    </div>
     <nav class="mast-nav">
       <a class="jump" href="#film">Film</a>
       <a class="jump" href="#model">Model</a>
