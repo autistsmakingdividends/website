@@ -1,4 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Exit Liquidity Ratings</title>
+<meta name="description" content="What it costs to exit every liquid asset on Robinhood Chain, from live routed quotes. Not market cap -- the largest clip an asset absorbs before exit cost reaches 5%.">
+<link rel="icon" href="logo-96.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap">
@@ -20,27 +27,37 @@ a{color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
 :focus-visible{outline:2px solid var(--mint);outline-offset:2px}
 
-.mast{border-bottom:1px solid var(--rule);background:var(--panel2)}
-.brand{display:flex;align-items:center;gap:12px;color:var(--ink);text-decoration:none}
+/* Masthead: copied from registry.html so the three pages carry the same one. The
+   colours are declared here rather than taken from this page's palette -- the ratings
+   sheet runs a softer ink (#DCE7E1) and a lighter panel than the rest of the site, and
+   inheriting those made the same markup render as a visibly different header. The first
+   attempt also used registry's MOBILE sizes as its desktop ones, so the logo and
+   wordmark came out a size small. */
+.mast{border-bottom:1px solid var(--rule);background:#050908;line-height:1.6;
+      --m-ink:#FFFFFF; --m-ink2:#B4C6BE; --m-dim:#788B83; --m-hot:#0BE39B}
+.mast .wrap{max-width:1080px}          /* registry's --maxw, so the brand sits identically */
+.mast-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0}
+.brand{display:flex;align-items:center;gap:12px;color:var(--m-ink)}
 .brand:hover{text-decoration:none}
-.brand img{width:38px;height:38px;display:block;flex:none}
-.brand-txt{font-weight:900;font-size:18px;letter-spacing:.11em;line-height:1.1}
-.brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--ink2);
+.brand img{width:46px;height:46px;display:block;flex:none}
+.brand-txt{font-weight:900;font-size:21px;letter-spacing:.11em;line-height:1.1}
+.brand-sub{font-family:var(--mono);font-size:11.5px;letter-spacing:.045em;color:var(--m-ink2);
   white-space:nowrap}
 .wm b{color:var(--mint);font-weight:700}
-.mast-nav{display:flex;gap:14px;font-family:var(--mono);font-size:10px;letter-spacing:.11em;
-  text-transform:uppercase;align-items:center}
-.mast-nav a{color:var(--muted);text-decoration:none}
+.mast-nav{display:flex;gap:22px;font-family:var(--mono);font-size:11px;letter-spacing:.11em;
+  text-transform:uppercase}
+.mast-nav a{color:var(--m-dim)}
 .mast-nav a:hover{color:var(--mint);text-decoration:none}
 .mast-nav .x{color:var(--mint);text-transform:none;letter-spacing:.02em;display:flex;
   align-items:center;gap:6px}
 .mast-nav .x svg{width:11px;height:11px;fill:currentColor;flex:none}
-.mast-in{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
-         padding:16px 0;flex-wrap:wrap}
-.brand{font-weight:900;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
-.brand span{color:var(--jade)}
-.mast-meta{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;
-           text-transform:uppercase;text-align:right}
+.mast-nav .x:hover{color:var(--m-hot)}
+@media(max-width:640px){
+  .mast-nav{gap:14px;font-size:10px}
+  .brand-sub{font-size:10px;letter-spacing:.02em}
+  .brand img{width:38px;height:38px}
+  .brand-txt{font-size:18px}
+}
 
 .thesis{padding:46px 0 10px}
 .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
@@ -181,6 +198,8 @@ td.na{color:var(--ash)}
 .sig{font-family:var(--mono);color:var(--jade);letter-spacing:.06em;margin-top:16px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
+</head>
+<body>
 
 <header class="mast">
   <div class="wrap mast-in">
@@ -722,3 +741,5 @@ function render(){ buildPlatforms(); renderVerdict(); renderCards();
                    renderStrip(); renderTable(); }
 boot();
 </script>
+</body>
+</html>
