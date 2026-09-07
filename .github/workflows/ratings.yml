@@ -56,6 +56,10 @@ jobs:
 
       # No pip install: build_ratings.py is stdlib-only, and carries its own Keccak, so
       # this step cannot break on a dependency.
+      # Keep the committed artefact so the gate can compare row counts against it.
+      - name: snapshot the previous artefact
+        run: cp ratings.json ratings.json.prev 2>/dev/null || true
+
       - name: rebuild ratings.json
         env:
           RPC_MIN_INTERVAL: '0.18'
@@ -76,6 +80,19 @@ jobs:
 
           if len(rows) < 600:
               fails.append(f"only {len(rows)} rated assets")
+
+          # An asset with no corroborated price is skipped, so a GeckoTerminal outage
+          # does not error -- it quietly returns a smaller book. Compare against the
+          # artefact already committed and refuse a large drop, because a book that
+          # shrank by a third looks exactly like a book where a third of the assets
+          # stopped trading.
+          try:
+              prev = json.load(open("ratings.json.prev"))["rows"]
+              if len(prev) and len(rows) < 0.75 * len(prev):
+                  fails.append(f"book shrank {len(prev)} -> {len(rows)}; "
+                               "likely a pricing outage, not a market event")
+          except FileNotFoundError:
+              pass
           eq = [r for r in rows if r["k"] == "e"]
           if len(eq) < 120:
               fails.append(f"only {len(eq)} tokenised equities -- classification probably broke")
@@ -127,6 +144,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f ratings.json.prev
           if git diff --quiet -- ratings.json ratings_state.json; then
             echo "nothing changed — nothing to commit"
           else

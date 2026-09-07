@@ -157,6 +157,7 @@ thead th.pick{color:var(--mint)}
      letter-spacing:.06em}
 .band{font-weight:700;display:inline-block;min-width:34px}
 .mcap{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.mcap.fd{color:var(--muted)}
 .scr{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
   background:var(--rule);border:1px solid var(--rule);margin-top:22px}
 .scr>div{background:var(--panel);padding:16px 18px}
@@ -319,7 +320,7 @@ td.na{color:var(--ash)}
       <th data-k="k">Class</th>
       <th data-k="p">Launchpad</th>
       <th data-k="b">Rating</th>
-      <th data-k="mc">Market cap</th>
+      <th data-k="mc" title="Market cap where the price feed reports circulating supply. A degree sign marks a fully diluted figure shown in its place.">Market cap</th>
       <th data-k="r">Pool reserves</th>
       <th data-k="d">Absorbs under 5%</th>
       <th data-k="i0" data-sz="0">$1k</th>
@@ -624,7 +625,7 @@ const tb=document.getElementById('tb'), q=document.getElementById('q'),
       gf=null;
 const val=(r,k)=> k==='s'?r.s.toUpperCase() : k==='nm'?(r.nm||'￿').toUpperCase()
                 : k==='p'?r.p : k==='k'?r.k : k==='b'?ORD[r.b]
-                : k==='mc'?(r.mc==null?-1:r.mc)
+                : k==='mc'?(r.mc!=null?r.mc:(r.fdv!=null?r.fdv:-1))
                 : k==='r'?(r.r==null?-1:r.r) : k==='d'?(r.d==null?-1:r.d) : (r.i[+k.slice(1)]==null?1e9:r.i[+k.slice(1)]);
 function renderTable(){
   const term=q.value.trim().toUpperCase(), kk=kf.value, bb=bf.value;
@@ -683,12 +684,23 @@ function renderTable(){
     const sp=document.createElement('span');
     sp.className='band'; sp.style.color=bc(r.b); sp.textContent=r.b;
     tdb.appendChild(sp); tr.appendChild(tdb);
+    /* Market cap where the feed reports one. Where it does not -- about one token in
+       twelve -- fully diluted value is shown INSTEAD, marked with a degree sign and a
+       muted colour, never passed off as market cap. The two agree within 2% for 90% of
+       the book, but the tail is real: UP is $11.6M circulating against $293M diluted. */
     const tdm=document.createElement('td');
     tdm.className='mcap';
-    tdm.textContent = r.mc==null ? '—' : usd(r.mc);
-    if(r.mc==null && r.fdv!=null) tdm.title='No market cap reported. Fully diluted: '+usd(r.fdv);
-    else if(r.fdv!=null) tdm.title='Fully diluted '+usd(r.fdv);
-    if(r.mc==null) tdm.classList.add('na');
+    if(r.mc!=null){
+      tdm.textContent=usd(r.mc);
+      if(r.fdv!=null) tdm.title='Fully diluted '+usd(r.fdv);
+    } else if(r.fdv!=null){
+      tdm.textContent=usd(r.fdv)+'\u00b0';
+      tdm.classList.add('fd');
+      tdm.title='Fully diluted value. The price feed reports no circulating supply for '
+                +'this token, so this is not a market cap.';
+    } else {
+      tdm.textContent='—'; tdm.classList.add('na');
+    }
     tr.appendChild(tdm);
     tr.appendChild(mk('', r.r==null?'—':usd(r.r)));
     tr.appendChild(mk('', usd(r.d)));
