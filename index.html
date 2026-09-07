@@ -61,8 +61,9 @@ img{max-width:100%}
    invalid anyway. The left margin is the logo width plus the brand gap (46+12), so it
    lines up under the wordmark rather than under the logo. */
 .brand-ca{margin-left:58px;font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;
-  color:var(--ink-dim);white-space:nowrap;user-select:all;-webkit-user-select:all;
-  overflow:hidden;text-overflow:ellipsis}
+  color:var(--mint);white-space:nowrap;user-select:all;-webkit-user-select:all;
+  overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+a.brand-ca:hover{color:var(--mint-hot);text-decoration:none}
 @media(max-width:640px){
   .brand-ca{margin-left:50px;font-size:8px;letter-spacing:0}
 }
@@ -241,7 +242,6 @@ h1 .mint{color:var(--mint)}
 .foot-rule{height:1px;background:var(--rule);margin-bottom:28px}
 .disclaim{font-family:var(--mono);font-size:11px;line-height:1.75;letter-spacing:.02em;max-width:74ch;margin:0}
 .disclaim b{color:var(--ink-2);font-weight:700}
-@media(max-width:820px){ .mast-nav .jump{display:none} }
 @media(max-width:640px){ .mast-nav{gap:13px;font-size:10px} .brand-sub{font-size:10px;letter-spacing:.02em}
   .brand img{width:38px;height:38px}
   .brand-txt{font-size:18px} }
@@ -259,15 +259,14 @@ h1 .mint{color:var(--mint)}
               <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
             </span>
           </a>
-      <span class="brand-ca" title="$AMD contract on Robinhood Chain">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</span>
+      <a class="brand-ca" href="https://gmgn.ai/robinhood/token/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18" rel="noopener noreferrer" target="_blank"
+         title="$AMD contract on Robinhood Chain — open the chart on GMGN">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</a>
     </div>
     <nav class="mast-nav">
-      <a class="jump" href="#film">Film</a>
-      <a class="jump" href="#model">Model</a>
-      <a class="jump" href="#results">Results</a>
-      <a class="jump" href="#structure">Structure</a>
+      <a href="index.html">Home</a>
       <a href="registry.html">Registry</a>
       <a href="ratings.html">Ratings</a>
+      <a href="https://app.long.xyz/tokens/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18" rel="noopener noreferrer" target="_blank">Long.xyz</a>
       <a class="x" href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8.1 9.2 9.5 12.6h-7.4l-5.8-7.6-6.7 7.6H.4l8.6-9.9L0 1.2h7.6l5.2 6.9z"/></svg>AMD_on_RH</a>
     </nav>
   </div>
@@ -314,7 +313,7 @@ h1 .mint{color:var(--mint)}
         <div class="film-meta">26 seconds &middot; sound on &middot; 19.8 MB</div>
       </div>
       <div class="film-frame">
-        <video controls playsinline preload="none"
+        <video controls playsinline preload="none" poster="film-poster.png"
                width="960" height="960" aria-label="AMD corporate introduction film">
           <source src="amd-intro.mp4" type="video/mp4">
           Your browser cannot play this video.

@@ -16,7 +16,7 @@
   --ground:#000000; --panel:#080D0B; --panel2:#0C1512; --rule:#15241D; --rule2:#1E332A;
   --jade:#0FA168; --mint:#02C385; --amber:#E0A93B; --ember:#D8543A; --ash:#55665E;
   --ink:#DCE7E1; --ink2:#9DB0A7; --muted:#74887F;
-  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 *{box-sizing:border-box}
@@ -49,8 +49,9 @@ a:hover{text-decoration:underline}
    invalid anyway. The left margin is the logo width plus the brand gap (46+12), so it
    lines up under the wordmark rather than under the logo. */
 .brand-ca{margin-left:58px;font-family:var(--mono);font-size:9.5px;letter-spacing:.02em;
-  color:var(--m-dim);white-space:nowrap;user-select:all;-webkit-user-select:all;
-  overflow:hidden;text-overflow:ellipsis}
+  color:var(--mint);white-space:nowrap;user-select:all;-webkit-user-select:all;
+  overflow:hidden;text-overflow:ellipsis;text-decoration:none}
+a.brand-ca:hover{color:var(--m-hot);text-decoration:none}
 @media(max-width:640px){
   .brand-ca{margin-left:50px;font-size:8px;letter-spacing:0}
 }
@@ -222,12 +223,14 @@ td.na{color:var(--ash)}
               <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
             </span>
           </a>
-      <span class="brand-ca" title="$AMD contract on Robinhood Chain">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</span>
+      <a class="brand-ca" href="https://gmgn.ai/robinhood/token/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18" rel="noopener noreferrer" target="_blank"
+         title="$AMD contract on Robinhood Chain — open the chart on GMGN">0x68f8f61897d17abd10ebc4eaf483e4c189f51e18</a>
     </div>
     <nav class="mast-nav">
-      <a href="index.html">&larr; Home</a>
-      <a href="https://app.long.xyz/tokens/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18"
-         rel="noopener noreferrer" target="_blank">Long.xyz</a>
+      <a href="index.html">Home</a>
+      <a href="registry.html">Registry</a>
+      <a href="ratings.html">Ratings</a>
+      <a href="https://app.long.xyz/tokens/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18" rel="noopener noreferrer" target="_blank">Long.xyz</a>
       <a class="x" href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8.1 9.2 9.5 12.6h-7.4l-5.8-7.6-6.7 7.6H.4l8.6-9.9L0 1.2h7.6l5.2 6.9z"/></svg>AMD_on_RH</a>
     </nav>
   </div>
