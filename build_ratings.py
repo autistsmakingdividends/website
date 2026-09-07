@@ -450,7 +450,14 @@ def classify(st, addrs):
 
 # -------------------------------------------------------------------------- pass: price
 def fetch_prices(addrs):
-    px, res, nm = {}, {}, {}
+    """-> price, pool reserves, market cap, FDV, name.
+
+    market_cap_usd is absent for roughly one token in twelve; fdv_usd is always there.
+    Both are carried, and the page shows market cap only -- printing FDV under a market
+    cap heading would be relabelling a different number, which is the habit this whole
+    page exists to argue against.
+    """
+    px, res, nm, mc, fdv = {}, {}, {}, {}, {}
     for i in range(0, len(addrs), 30):
         chunk = addrs[i:i + 30]
         try:
@@ -474,10 +481,16 @@ def fetch_prices(addrs):
                     res[a] = float(at["total_reserve_in_usd"])
                 except (TypeError, ValueError):
                     pass
+            for key, dest in (("market_cap_usd", mc), ("fdv_usd", fdv)):
+                if a and at.get(key):
+                    try:
+                        dest[a] = float(at[key])
+                    except (TypeError, ValueError):
+                        pass
             if a and at.get("name"):
                 nm[a] = at["name"]
         time.sleep(2.2)
-    return px, res, nm
+    return px, res, nm, mc, fdv
 
 
 # -------------------------------------------------------------------------- pass: quote
@@ -601,7 +614,7 @@ def main():
     classify(st, scan)
 
     print("price", flush=True)
-    px, res, gtname = fetch_prices(scan)
+    px, res, gtname, mcap, fdv = fetch_prices(scan)
     print(f"  priced {len(px):,}/{len(scan):,}", flush=True)
 
     print(f"quote + probe ({WORKERS} workers)", flush=True)
@@ -633,6 +646,8 @@ def main():
                "k": "e" if is_eq else "o",
                "b": band(dep), "d": (None if dep is None else int(round(dep))),
                "i": imp, "r": (int(res[addr]) if addr in res else None),
+               "mc": (int(mcap[addr]) if addr in mcap else None),
+               "fdv": (int(fdv[addr]) if addr in fdv else None),
                "p": ("Robinhood" if is_eq else (st["plat"].get(addr) or "")),
                "g": pr["v"]}
         if auth.get("mint"):

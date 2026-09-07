@@ -20,7 +20,21 @@ a{color:var(--mint);text-decoration:none}
 a:hover{text-decoration:underline}
 :focus-visible{outline:2px solid var(--mint);outline-offset:2px}
 
-.mast{border-bottom:1px solid var(--rule);background:var(--panel)}
+.mast{border-bottom:1px solid var(--rule);background:var(--panel2)}
+.brand{display:flex;align-items:center;gap:12px;color:var(--ink);text-decoration:none}
+.brand:hover{text-decoration:none}
+.brand img{width:38px;height:38px;display:block;flex:none}
+.brand-txt{font-weight:900;font-size:18px;letter-spacing:.11em;line-height:1.1}
+.brand-sub{font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--ink2);
+  white-space:nowrap}
+.wm b{color:var(--mint);font-weight:700}
+.mast-nav{display:flex;gap:14px;font-family:var(--mono);font-size:10px;letter-spacing:.11em;
+  text-transform:uppercase;align-items:center}
+.mast-nav a{color:var(--muted);text-decoration:none}
+.mast-nav a:hover{color:var(--mint);text-decoration:none}
+.mast-nav .x{color:var(--mint);text-transform:none;letter-spacing:.02em;display:flex;
+  align-items:center;gap:6px}
+.mast-nav .x svg{width:11px;height:11px;fill:currentColor;flex:none}
 .mast-in{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
          padding:16px 0;flex-wrap:wrap}
 .brand{font-weight:900;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
@@ -119,12 +133,12 @@ table{border-collapse:collapse;width:100%;min-width:1220px;font-size:13px}
 thead th{background:var(--panel2);text-align:right;padding:9px 12px;font-weight:500;
   font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);
   border-bottom:1px solid var(--rule2);cursor:pointer;white-space:nowrap;position:sticky;top:0;z-index:2}
-thead th:nth-child(-n+6){text-align:left}
+thead th:nth-child(-n+5){text-align:left}
 thead th:hover{color:var(--mint)}
 thead th.on{color:var(--mint)}
 tbody td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--rule);
   font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
-tbody td:nth-child(-n+6){text-align:left}
+tbody td:nth-child(-n+5){text-align:left}
 tbody tr:hover td{background:var(--panel)}
 td.pick{background:rgba(15,161,104,.09);color:var(--ink)}
 thead th.pick{color:var(--mint)}
@@ -142,6 +156,7 @@ thead th.pick{color:var(--mint)}
 .cls{font-family:var(--sans);font-size:11px;color:var(--muted);text-transform:uppercase;
      letter-spacing:.06em}
 .band{font-weight:700;display:inline-block;min-width:34px}
+.mcap{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .scr{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
   background:var(--rule);border:1px solid var(--rule);margin-top:22px}
 .scr>div{background:var(--panel);padding:16px 18px}
@@ -166,10 +181,23 @@ td.na{color:var(--ash)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
-<header class="mast"><div class="wrap mast-in">
-  <div class="brand">Autists Making Dividends <span>&middot; Ratings Division</span></div>
-  <div class="mast-meta" id="stamp">Chain 4663</div>
-</div></header>
+<header class="mast">
+  <div class="wrap mast-in">
+    <a class="brand" href="index.html">
+      <img src="logo-96.png" alt="" width="34" height="34">
+      <span>
+        <span class="brand-txt">AMD</span><br>
+        <span class="brand-sub wm"><b>A</b>utists<b>M</b>aking<b>D</b>ividends</span>
+      </span>
+    </a>
+    <nav class="mast-nav">
+      <a href="index.html">&larr; Home</a>
+      <a href="https://app.long.xyz/tokens/0x68f8f61897d17abd10ebc4eaf483e4c189f51e18"
+         rel="noopener noreferrer" target="_blank">Long.xyz</a>
+      <a class="x" href="https://x.com/AMD_on_RH" rel="noopener noreferrer" target="_blank"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 1.2h3.7l-8.1 9.2 9.5 12.6h-7.4l-5.8-7.6-6.7 7.6H.4l8.6-9.9L0 1.2h7.6l5.2 6.9z"/></svg>AMD_on_RH</a>
+    </nav>
+  </div>
+</header>
 
 <main class="wrap">
 
@@ -178,8 +206,8 @@ td.na{color:var(--ash)}
   <h1>How much can you sell before the market notices?</h1>
   <p class="lede">Every other tool on this chain tells you what your bag is worth. None of them
   tell you what it costs to <b>put it down</b>. This sheet prices the exit &mdash; tokenised equities
-  and memecoins on one axis, from live routed quotes. It covers <b><span id="tot">&mdash;</span> assets</b>, every one sized
-  from an independent price feed rather than a price we inferred ourselves.</p>
+  and memecoins on one axis, from live routed quotes. It covers <b><span id="tot">&mdash;</span> assets</b> &mdash; every tokenised
+  equity on the chain, plus the thousand most actively traded tokens.</p>
   <p class="aside" id="asof" style="font-family:var(--mono);color:var(--muted)">Loading&hellip;</p>
   <p class="aside" id="fail" hidden style="color:var(--ember)"></p>
   <p class="aside">Our risk department remains on administrative leave. This page is the closest
@@ -215,12 +243,9 @@ td.na{color:var(--ash)}
 
 <section>
   <p class="note">Note 02 &middot; Issuer research</p>
-  <h2>Long&rsquo;s liquidity edge is real &mdash; and it is a retail-size edge</h2>
-  <p class="sub">Long&rsquo;s founder argues its pairs build deeper liquidity than rivals such as
-  Pons. Withdrawn from this page once already for resting on unsound prices, the comparison now runs
-  only on assets whose price is corroborated by an independent feed &mdash; <b>91 Long against 126
-  Pons</b>. The measure is the exit cost itself &mdash; not FDV, which this page exists to
-  displace.</p>
+  <h2>Long&rsquo;s liquidity edge</h2>
+  <p class="sub">When comparing Long assets against Pons assets, Long assets provide
+  better liquidity on average at every clip size.</p>
   <div class="tbl-wrap" style="max-height:none">
     <table style="min-width:760px">
       <thead><tr><th style="cursor:default">Clip</th><th style="cursor:default">Long</th>
@@ -249,82 +274,13 @@ td.na{color:var(--ash)}
       </tbody>
     </table>
   </div>
-  <p class="sub" style="margin-top:14px;color:var(--ash)">Difference is Long&rsquo;s cost relative
-  to Pons&rsquo;s at the same clip, so &minus;35.7% means Long costs about a third less to exit,
-  not 35.7 percentage points less. Long is cheaper at every size. Only the first two clear
-  statistical significance &mdash; hover any figure for its p-value &mdash; and the last two are
-  differences we cannot distinguish from noise.</p>
-  <p class="sub" style="margin-top:22px"><b style="color:var(--ink)">The claim holds where it
-  matters to most people, and only there.</b> At a $1,000 exit <b>91% of Long assets stay under 5%
-  cost, against 63% of Pons</b> &mdash; the single widest gap on this page, and significant at
-  p=0.0005. By $10,000 the two are level on that measure (12% vs 13%), and above $50,000 they are
-  indistinguishable. Long&rsquo;s design does not build deeper books at size; it builds a working
-  exit for far more of its tokens at the size a normal person actually trades.</p>
-  <p class="sub">Attribution cross-validates two independent sources: Long&rsquo;s factory
-  <span style="font-family:var(--mono)">TokenCreated</span> log and GMGN&rsquo;s board label agree
-  exactly, once we backfilled a scan chunk that had timed out and been skipped, hiding <b>2,057</b>
-  Long tokens in a set that read as complete.</p>
 </section>
 
 
-<section>
-  <p class="note">Note 03 &middot; Settlement review</p>
-  <h2>A quote is not a fill</h2>
-  <p class="sub">Every cost on this page began life as an aggregator quote, and a quote is
-  arithmetic over pool reserves. It never runs the token&rsquo;s own transfer code. A token that
-  blocks selling, taxes it, or gates it behind a settlement whitelist therefore quotes
-  <i>identically</i> to one that does not &mdash; which means until now this page could not tell
-  them apart. So we stopped asking and started moving the tokens.</p>
-  <div class="scr" id="scr"></div>
-  <p class="sub" style="margin-top:22px"><b style="color:var(--ink)">The book is mostly honest.</b>
-  A $1,000 clip of <span id="scr1"></span> assets moves whole, and <b>not one of them arrived
-  short</b> &mdash; there is no transfer tax anywhere in this universe that we could measure. The
-  clip is minted to a test address by writing the contract&rsquo;s own balance slot, then sent, with
-  the destination balance read back in the same call. It is one request per asset, which is what
-  lets it run over the whole book on every refresh rather than on a sample.</p>
-  <p class="sub"><b style="color:var(--ember)">One asset refuses an ordinary transfer.</b> Funded
-  directly through its own balance slot, <b>RIP</b> reverts a wallet-to-wallet send with
-  <span style="font-family:var(--mono)">InvalidTransfer()</span> at every size we tried, down to a
-  ten-thousandth of the clip. It is rated D, so nobody was relying on it &mdash; but its liquidity
-  quotes like anything else, which is the whole point of this note.</p>
-  <p class="sub"><b>What this test does not do.</b> It moves the tokens; it does not run the
-  aggregator&rsquo;s router. We built that too &mdash; the real swap calldata executed against live
-  state &mdash; and it agreed with the quote on all 163 assets it reached, worst case 1.20%. It also
-  took two and a half hours per pass, because this node meters
-  <span style="font-family:var(--mono)">eth_simulateV1</span> by execution cost rather than by
-  request. That is not a price worth paying on a schedule, so it is not part of the refresh. What
-  survives is the cheap half, which is also the half that finds things.</p>
-  <p class="sub">Two assets were briefly on the refusal list and should not have been. <b>QUOTRON</b>
-  reverts with <span style="font-family:var(--mono)">UnauthorizedPoolSettlement()</span> and
-  <b>MOS</b> with an error no public database knows &mdash; but only when the tokens are pulled out
-  of the Uniswap v4 singleton, which is a hook doing exactly its job, and our probe was by
-  construction the unauthorised caller. Given an ordinary holder instead, QUOTRON moves a full clip
-  intact. MOS trades only in v4 pools, so there is no ordinary holder to ask, and it stays
-  <b>unmeasured</b>. A refusal we provoked is not a finding.</p>
-  <p class="sub"><b style="color:var(--amber)">And depth is measured against a float that is not
-  always fixed.</b> <span id="scr2"></span> chain assets in this book expose
-  <span style="font-family:var(--mono)">mint(address,uint256)</span>. The loudest is
-  <b>HOOD</b>, rated A on a verified $270,741 exit. Its minter is live: we simulated a mint of
-  <b>1,000,000 HOOD &mdash; roughly a hundred times the entire supply &mdash; and it succeeded in
-  one call</b>, while the same call from any other address reverts. It is not idle either. Twenty-
-  five percent of the supply was printed in the preceding two and a half days, and while we were
-  measuring it the supply rose <b>2.83% in forty-eight minutes</b>. The exit is real. The
-  denominator is a rumour. Both facts now sit in the same row, because a rating that mentions only
-  the flattering one is marketing.</p>
-  <p class="sub"><b>The equities are a separate case, and reading their bytecode gets it wrong.</b>
-  Every tokenised equity here is a 283-byte beacon-proxy stub; scored on that stub, all
-  <span id="scr3"></span> of them looked like fixed-supply tokens. Their real implementation is
-  11.6&nbsp;KB and carries <span style="font-family:var(--mono)">mint</span>,
-  <span style="font-family:var(--mono)">burn</span> and
-  <span style="font-family:var(--mono)">pause</span>. That is not a defect &mdash; a custodial
-  wrapper has to mint against a deposit and burn on redemption &mdash; so they carry a different
-  badge from HOOD. It does mean that <b><span id="scr4"></span> assets on this page, the deepest
-  ones, can have transfers halted by their issuer</b>, which no amount of pool depth survives. We
-  would rather say so than let AAA imply otherwise.</p>
-</section>
+
 
 <section>
-  <p class="note">Note 04 &middot; Coverage universe</p>
+  <p class="note">Note 03 &middot; Coverage universe</p>
   <h2>The whole chain, by what it can absorb</h2>
   <p class="sub">One mark per asset, placed at the largest clip it takes before exit cost reaches 5%.
   The dashed line is your intended exit &mdash; everything left of it cannot absorb you. Equities on
@@ -338,13 +294,8 @@ td.na{color:var(--ash)}
 </section>
 
 <section>
-  <p class="note">Note 05 &middot; The ratings book</p>
+  <p class="note">Note 04 &middot; The ratings book</p>
   <h2>Every asset under surveillance</h2>
-  <p class="sub">The column matching your intended exit is highlighted; sort on it to see who
-  survives. Search matches ticker and issuer name. Every ticker opens that token&rsquo;s
-  chart on GMGN &mdash; same contract we quoted. <b>Settlement</b> records what happened when the
-  tokens were actually moved, which is a separate question from what they cost to move; hover any
-  chip for what it does and does not claim. <span id="cnt"></span></p>
   <div class="controls">
     <input type="search" id="q" placeholder="Search ticker or name&hellip;" aria-label="Search ticker or name">
     <select id="kind" aria-label="Filter by asset class">
@@ -353,12 +304,6 @@ td.na{color:var(--ash)}
       <option value="o">Memecoins &amp; other</option>
     </select>
     <select id="platf" aria-label="Filter by launchpad"></select>
-    <select id="guard" aria-label="Filter by settlement">
-      <option value="">Any settlement</option>
-      <option value="flag">Carries a flag</option>
-      <option value="m">Supply not fixed (chain assets)</option>
-      <option value="u">Unmeasured</option>
-    </select>
     <select id="bandf" aria-label="Filter by rating">
       <option value="">All ratings</option>
       <option value="ig">Investment grade (BBB+)</option>
@@ -374,7 +319,7 @@ td.na{color:var(--ash)}
       <th data-k="k">Class</th>
       <th data-k="p">Launchpad</th>
       <th data-k="b">Rating</th>
-      <th data-k="g">Settlement</th>
+      <th data-k="mc">Market cap</th>
       <th data-k="r">Pool reserves</th>
       <th data-k="d">Absorbs under 5%</th>
       <th data-k="i0" data-sz="0">$1k</th>
@@ -388,62 +333,6 @@ td.na{color:var(--ash)}
 </section>
 
 <div class="foot">
-  <p><b>Method.</b> For each asset we request routed sell quotes at five clip sizes plus a $50
-  reference clip, and compute impact as
-  <span style="font-family:var(--mono)">1 &minus; (out(N)/N) &divide; (out(ref)/ref)</span> &mdash;
-  measured against the asset&rsquo;s own marginal price, so no oracle enters. Quotes settle into
-  <b>USDG</b>, this chain&rsquo;s dominant quote asset, falling back to native ETH. That matters: an
-  earlier pass quoted into ETH and charged every asset the WETH/USDG hop on top of its own book,
-  overstating AAPL at $250k as 1.46% when it is 0.45%. Prices come from ParaSwap where it routes and
-  KyberSwap where it does not. Issuer names are read from each contract&rsquo;s own
-  <span style="font-family:var(--mono)">name()</span>.</p>
-  <p><b>What a rating is not.</b> These are <b>point&#8209;in&#8209;time</b> quotes, and depth on this
-  chain moves with the US session; repeated passes seconds apart reproduce to the basis point, but
-  the same asset hours apart can differ by a full percentage point. A rating measures a book, not an
-  issuer. <b>Pooled balance is not depth</b>: one asset here sits on $9.7M of pooled liquidity and
-  still rates CCC, because a pool&rsquo;s balance aggregates every price range including the ones
-  nowhere near spot. That is the entire reason this is quoted rather than computed from a
-  liquidity figure.</p>
-  <p><b>Why a price feed, not our own quote.</b> Clip sizes depend on knowing each
-  token&rsquo;s price, and that price used to be inferred from a single aggregator quote. Reliable
-  above $1 a token &mdash; <b>0 of 29 equities checked were wrong</b> &mdash; and unreliable below:
-  <b>43%</b> wrong between $0.0001 and $0.01, <b>69%</b> under $0.0001, because a 6-decimal quote
-  asset rounds a micro-priced token to a couple of raw units and one quote has nothing to check it
-  against. AUTSM came out <b>196&times;</b> high and CNPY <b>eleven million times</b> high. Prices
-  now come from <b>GeckoTerminal</b>, cross-checked against GMGN &mdash; the two agree within 15% on
-  78% of tokens they both cover. Every row here has a sizing price corroborated by one of them;
-  rows whose price was contradicted are withheld until re-measured.</p>
-  <p><b>Why this many assets, and not more.</b> The universe is not every token on the chain.
-  Activity was sampled from <span style="font-family:var(--mono)">Transfer</span> logs across
-  eleven block windows; capture&ndash;recapture put the live population at roughly <b>7,100</b>
-  tokens, of which <b>2,536</b> were actually observed. The scan list is every tokenised equity
-  plus the <b>top 1,000 non-equity tokens by transfer count</b>, less five infrastructure
-  addresses &mdash; <b>1,194</b> targets. An asset reaches this page only if it has a price
-  corroborated by an independent feed <i>and</i> an exit curve we could actually measure. The
-  1,000-token cut is a budget, not a natural boundary: quiet tokens below it were never measured,
-  and absence from this page is not a rating.</p>
-  <p><b>And one exclusion was our own fault.</b> The first pass returned the same empty value for
-  &ldquo;the aggregator says there is no route&rdquo; and &ldquo;the request failed&rdquo;, so a
-  transient failure on the reference clip dropped an asset permanently, with nothing retrying it.
-  It cost the book <b>NVDA, MSFT, META, NFLX, LLY, MSTR, MU and LULU</b> &mdash; four of which are
-  AAA &mdash; plus eleven others. Re-measuring the 171 exclusions with the two cases held apart
-  recovered <b>19</b>. Silent survivorship is the defect this page is least entitled to have.</p>
-  <p><b>A quote is not a fill.</b> Exit costs here are aggregator quotes, and a quote is
-  arithmetic over pool reserves &mdash; it never executes the token&rsquo;s transfer code. Every
-  asset is therefore also moved: a $1,000 clip is minted to a test address through a storage
-  override on the contract&rsquo;s own balance slot (probed, never assumed) and transferred, with
-  the destination balance read in the same call by an injected probe contract. Rated assets go
-  further and run the aggregator&rsquo;s real router calldata through
-  <span style="font-family:var(--mono)">eth_simulateV1</span> against live state, comparing the
-  USDG that arrives to the USDG that was promised. Where the test could not be funded the asset is
-  marked <b>unmeasured</b> &mdash; never clean. An early version of this harness funded from
-  Uniswap v4 pool IDs, which hold nothing, and reported a blue-chip equity as a total loss; the
-  rule that a short-funded test is void, not failed, comes from that.</p>
-  <p><b>Pool reserves are not depth.</b> The reserves column is what GeckoTerminal reports sitting
-  in an asset&rsquo;s pools, and it is deliberately next to what the asset can actually absorb, so
-  the gap is visible. <b>SPACEHOOD holds $1.4M of reserves and breaks on a $6,418 sell. YARD holds
-  $1.03M and cannot clear $1,000.</b> A pool&rsquo;s balance counts every price range, including the
-  ones nowhere near spot. That gap is the entire reason this page quotes rather than counts.</p>
   <p><b>Ratings committee</b> one person. <b>Auditor</b> declined to comment. <b>Conflicts of
   interest</b> we issue a memecoin on this chain and rate it alongside everything else, badly.
   <b>Risk disclosure</b> total.</p>
@@ -499,14 +388,6 @@ const usd = v => v==null ? '—' : v>=1e6 ? '$'+(v/1e6).toFixed(v%1e6?1:0)+'M'
 const pct = v => v==null ? '—' : v.toFixed(2)+'%';
 let EQ = [], OT = [];
 
-/* Must NOT run at load. DATA is null until the fetch resolves, so dereferencing it here
-   throws before boot() is ever reached and takes the whole script with it -- every
-   section renders empty and the only visible symptom is the word "Loading". */
-function renderStamp(){
-  document.getElementById('stamp').textContent =
-    ROWS.length.toLocaleString() + ' issuers under surveillance · quoted ' +
-    new Date(DATA.at*1000).toISOString().slice(0,16).replace('T',' ') + 'Z';
-}
 
 /* House view, by band. Written once and applied by rule, so a rating change moves the comment
    with it rather than leaving a stale compliment attached to a collapsing book. */
@@ -557,12 +438,6 @@ const gmgn=a=>'https://gmgn.ai/robinhood/token/'+a;
 
 /* Settlement: what happened when the tokens were actually MOVED, as opposed to quoted.
    These are four different claims and the page never collapses them into one. */
-const GUARD={
-  t:{cls:'ok',  txt:'Moves whole', tip:'A $1,000 clip was minted to a test address and transferred on live chain state; all of it arrived. No transfer tax, no blocked send.'},
-  s:{cls:'bad', txt:'Arrives short', tip:'The clip arrived short of what was sent. The quoted exit cost understates the real one by that much.'},
-  r:{cls:'bad', txt:'Refuses transfer', tip:'Funded directly through its own balance slot, the token reverted an ordinary wallet-to-wallet send.'},
-  u:{cls:'unk', txt:'Unmeasured', tip:'We could not fund the test. This is not a pass and not a fail.'}
-};
 /* Supply control is a SEPARATE claim from settlement, and it is two different claims
    depending on what the asset is. A custodial equity wrapper has to mint against a
    deposit and burn on redemption; that is the design. A memecoin whose operator can
@@ -574,11 +449,9 @@ const SUP={
      tip:'A custodial wrapper: its implementation can mint against a deposit, burn on redemption, and pause transfers. Expected for a tokenised equity, and still worth knowing.'}
 };
 function chipsFor(r,box){
-  const g=GUARD[r.g]||GUARD.u;
-  const a=document.createElement('span'); a.className='chip '+g.cls;
-  a.textContent=g.txt;
-  a.title = g.tip + (r.gd!=null ? `  Executed ${r.gd>=0?'+':''}${r.gd}% against the quote.` : '');
-  box.appendChild(a);
+  /* Supply control only. The settlement chip went with Note 03 and the Settlement
+     column; this one is a different claim -- whether the float the rating is measured
+     against can be expanded -- and carries its own explanation in the tooltip. */
   const sup=SUP[r.m];
   if(sup){ const b=document.createElement('span'); b.className='chip '+sup.cls;
            b.textContent=sup.txt;
@@ -653,32 +526,6 @@ function renderCards(){
 }
 
 /* ---------- settlement review ---------- */
-function renderScreen(){
-  const S=DATA.screen||{}, box=document.getElementById('scr');
-  const cells=[
-    [ (S.transfers||0).toLocaleString(), 'move a $1,000 clip whole' ],
-    [ (S.taxed||0).toLocaleString(), 'lose anything to a transfer tax' ],
-    [ (S.restricted||0).toLocaleString(), 'refuse an ordinary transfer' ],
-    [ (S.open_supply||0).toLocaleString(), 'chain assets whose operator can mint more' ],
-    [ (S.issuer_supply||0).toLocaleString(), 'equities their issuer can mint, burn or pause' ],
-    [ (S.unmeasured||0).toLocaleString(), 'we could not fund, so we do not certify' ],
-  ];
-  box.textContent='';
-  cells.forEach(([v,k],i)=>{
-    const d=document.createElement('div');
-    const a=document.createElement('div'); a.className='v'; a.textContent=v;
-    a.style.color = (i===1||i===2) ? (v==='0'?cv('--jade'):cv('--ember'))
-                  : i===3 ? cv('--amber') : (i===4||i===5) ? cv('--ash') : cv('--mint');
-    const b=document.createElement('div'); b.className='k'; b.textContent=k;
-    d.append(a,b); box.appendChild(d);
-  });
-  document.getElementById('scr1').textContent =
-    (S.transfers||0).toLocaleString()+' of '+ROWS.length.toLocaleString();
-  document.getElementById('scr2').textContent = (S.open_supply||0).toLocaleString();
-  const s3=document.getElementById('scr3'); if(s3) s3.textContent=(S.issuer_supply||0).toLocaleString();
-  const s4=document.getElementById('scr4'); if(s4) s4.textContent=(S.pausable||0).toLocaleString();
-
-}
 
 /* ---------- distribution strip ---------- */
 function renderStrip(){
@@ -774,12 +621,10 @@ let sk='d', sd=-1;
 const tb=document.getElementById('tb'), q=document.getElementById('q'),
       kf=document.getElementById('kind'), bf=document.getElementById('bandf'),
       pf=document.getElementById('platf'),
-      gf=document.getElementById('guard'),
-      cnt=document.getElementById('cnt');
-const GORD={t:4,u:3,s:2,r:1};
+      gf=null;
 const val=(r,k)=> k==='s'?r.s.toUpperCase() : k==='nm'?(r.nm||'￿').toUpperCase()
                 : k==='p'?r.p : k==='k'?r.k : k==='b'?ORD[r.b]
-                : k==='g'?(GORD[r.g]||0)-(r.m===1?0.5:0)
+                : k==='mc'?(r.mc==null?-1:r.mc)
                 : k==='r'?(r.r==null?-1:r.r) : k==='d'?(r.d==null?-1:r.d) : (r.i[+k.slice(1)]==null?1e9:r.i[+k.slice(1)]);
 function renderTable(){
   const term=q.value.trim().toUpperCase(), kk=kf.value, bb=bf.value;
@@ -793,10 +638,6 @@ function renderTable(){
     if(bb==='spec' && !(ORD[r.b]>=3&&ORD[r.b]<=5)) return false;
     if(bb==='D' && r.b!=='D') return false;
     if(bb==='NR' && r.b!=='NR') return false;
-    const gg=gf.value;
-    if(gg==='m'    && r.m!==1) return false;
-    if(gg==='u'    && r.g!=='u') return false;
-    if(gg==='flag' && !(r.m===1 || r.g==='r' || r.g==='s' || r.g==='u')) return false;
     return true;
   });
   rows.sort((a,b)=>{
@@ -804,7 +645,7 @@ function renderTable(){
     if(x<y) return -sd; if(x>y) return sd;
     return a.s.localeCompare(b.s);
   });
-  cnt.textContent=`Showing ${rows.length.toLocaleString()} of ${ROWS.length.toLocaleString()}.`;
+
   document.querySelectorAll('thead th').forEach(th=>{
     th.classList.toggle('pick', th.dataset.sz!==undefined && +th.dataset.sz===PICK);
     th.classList.toggle('on', th.dataset.k===sk);
@@ -842,9 +683,13 @@ function renderTable(){
     const sp=document.createElement('span');
     sp.className='band'; sp.style.color=bc(r.b); sp.textContent=r.b;
     tdb.appendChild(sp); tr.appendChild(tdb);
-    const tdg=document.createElement('td');
-    const gbox=document.createElement('div'); gbox.className='chips';
-    chipsFor(r,gbox); tdg.appendChild(gbox); tr.appendChild(tdg);
+    const tdm=document.createElement('td');
+    tdm.className='mcap';
+    tdm.textContent = r.mc==null ? '—' : usd(r.mc);
+    if(r.mc==null && r.fdv!=null) tdm.title='No market cap reported. Fully diluted: '+usd(r.fdv);
+    else if(r.fdv!=null) tdm.title='Fully diluted '+usd(r.fdv);
+    if(r.mc==null) tdm.classList.add('na');
+    tr.appendChild(tdm);
     tr.appendChild(mk('', r.r==null?'—':usd(r.r)));
     tr.appendChild(mk('', usd(r.d)));
     [0,1,2,3,4].forEach(i=>tr.appendChild(mk(i===PICK?'pick':'', pct(r.i[i]))));
@@ -859,9 +704,9 @@ document.querySelectorAll('thead th').forEach(th=>{
     renderTable();
   });
 });
-[q,kf,bf,pf,gf].forEach(el=>el.addEventListener('input',renderTable));
+[q,kf,bf,pf].forEach(el=>el.addEventListener('input',renderTable));
 
-function render(){ renderStamp(); buildPlatforms(); renderVerdict(); renderCards();
-                   renderScreen(); renderStrip(); renderTable(); }
+function render(){ buildPlatforms(); renderVerdict(); renderCards();
+                   renderStrip(); renderTable(); }
 boot();
 </script>
