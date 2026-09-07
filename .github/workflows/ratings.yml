@@ -1,0 +1,141 @@
+name: exit-ratings
+
+# Rebuilds ratings.json: what it costs to EXIT every liquid asset on Robinhood Chain.
+#
+# Unlike the registry's boards, none of this can be computed in the browser. Every row is
+# ~7 live aggregator quotes plus an eth_call that actually moves a $1,000 clip, so the
+# page reads a committed artefact and this job is what keeps that artefact honest.
+#
+# CADENCE. A full pass is ~1,000 assets at ~3.7s each with 3 workers, so roughly an hour;
+# measured 2026-09-07 at 20 assets in 74s. Every 6h keeps the page inside its own staleness
+# warning (the page turns the as-of line red past 9h) with room for a missed slot, since
+# GitHub silently skips scheduled runs under load and records nothing when it does.
+#
+# WHY NOT MORE OFTEN. The binding constraint is KyberSwap, not us: ~1.5 req/s sustained,
+# and 7 quotes per asset. Pushing the cadence means cutting the universe, and a smaller
+# book is a worse product than a slightly older one.
+#
+# WHY NO EXECUTED-SELL TIER. There was one -- the aggregator's real router calldata run
+# through eth_simulateV1 against live state. It agreed with the quote on all 163 assets it
+# reached (worst case 1.20%), and it took two and a half hours per pass, because this node
+# meters eth_simulateV1 by execution cost rather than by request. The transfer probe kept
+# here is one eth_call per asset and is the half that actually finds things.
+#
+# ratings_state.json is LOAD-BEARING. It carries the universe with decayed activity
+# weights, plus decimals, balance slots and supply authority per token. Without it every
+# run re-classifies ~1,000 contracts from scratch and the cold-start path depends on
+# eth_getLogs, which this node budgets at roughly a dozen calls before a lockout.
+
+on:
+  schedule:
+    - cron: '41 */6 * * *'     # every 6h, off the hour to dodge the busiest cron slots
+  workflow_dispatch: {}
+
+concurrency:
+  # cancel-in-progress TRUE: the artefact and the state are written only at the very end,
+  # so a cancelled run commits nothing and the next one simply redoes the pass. A fresh
+  # run is always worth more than a stalled one.
+  group: exit-ratings
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240        # ~1.5h expected on a warm state; the ceiling covers a
+                                # run where the top-1000 has churned and several hundred
+                                # contracts need classifying from scratch
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # No pip install: build_ratings.py is stdlib-only, and carries its own Keccak, so
+      # this step cannot break on a dependency.
+      - name: rebuild ratings.json
+        env:
+          RPC_MIN_INTERVAL: '0.18'
+          WORKERS: '3'
+          MAX_OTHERS: '1000'
+        run: python3 build_ratings.py
+
+      # Verify the ARTEFACT, not the exit code. A pass that returns junk exits 0 just as
+      # happily as one that works, and committing a plausible-looking empty book is worse
+      # than not running at all.
+      - name: sanity-check the artefact
+        run: |
+          python3 - <<'PY'
+          import json, time, sys
+          d = json.load(open("ratings.json"))
+          rows = d["rows"]
+          fails = []
+
+          if len(rows) < 600:
+              fails.append(f"only {len(rows)} rated assets")
+          eq = [r for r in rows if r["k"] == "e"]
+          if len(eq) < 120:
+              fails.append(f"only {len(eq)} tokenised equities -- classification probably broke")
+          if not any(r["b"] == "AAA" for r in rows):
+              fails.append("nothing rated AAA")
+          if not any(r["k"] == "o" for r in rows):
+              fails.append("no chain assets at all")
+
+          # Every row must be shaped the way the page expects.
+          for r in rows[:50]:
+              if len(r.get("i", [])) != 5:
+                  fails.append(f"{r['s']}: impact curve is not 5 points"); break
+              if not r.get("f", "").startswith("0x") or len(r["f"]) != 42:
+                  fails.append(f"{r['s']}: bad address {r.get('f')!r}"); break
+              if r.get("g") not in ("t", "s", "r", "u"):
+                  fails.append(f"{r['s']}: unknown settlement verdict {r.get('g')!r}"); break
+
+          # The settlement screen must have actually run. If every row came back
+          # unmeasured the probe is broken, and "unmeasured" everywhere reads on the page
+          # as a quiet shrug rather than as a fault.
+          s = d["screen"]
+          if s["unmeasured"] > 0.25 * len(rows):
+              fails.append(f"{s['unmeasured']} of {len(rows)} unmeasured -- probe likely broken")
+          if s["transfers"] < 0.5 * len(rows):
+              fails.append(f"only {s['transfers']} rows moved a clip")
+
+          age = time.time() - d["at"]
+          if age > 3 * 3600:
+              fails.append(f"generated_at is {age/60:.0f} min old")
+
+          # The state file is what keeps the next run cheap and the universe alive.
+          try:
+              st = json.load(open("ratings_state.json"))
+              if len(st["uni"]) < 500:
+                  fails.append(f"universe collapsed to {len(st['uni'])} tokens")
+              if len(st["dec"]) < len(rows):
+                  fails.append("state has fewer decimals than the book has rows")
+          except Exception as e:
+              fails.append(f"ratings_state.json unreadable: {e}")
+
+          if fails:
+              print("REFUSING TO COMMIT:", "; ".join(fails)); sys.exit(1)
+          print(f"ok: {len(rows):,} rated ({len(eq)} equities), "
+                f"{s['transfers']:,} move a clip, {s['restricted']} refuse, "
+                f"{s['taxed']} taxed, {s['open_supply']} open-supply")
+          PY
+
+      - name: commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- ratings.json ratings_state.json; then
+            echo "nothing changed — nothing to commit"
+          else
+            # ratings_state.json MUST go with it: without the state the next run
+            # re-classifies every contract and falls back on a throttled eth_getLogs.
+            git add ratings.json ratings_state.json
+            git commit -m "ratings: refresh exit costs [skip ci]"
+            git fetch origin main
+            git rebase origin/main || { git checkout --ours ratings.json ratings_state.json; \
+                                        git add ratings.json ratings_state.json; git rebase --continue; }
+            git push
+          fi

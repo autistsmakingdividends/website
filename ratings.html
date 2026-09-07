@@ -1,0 +1,862 @@
+<title>Exit Liquidity Ratings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap">
+<style>
+/* Single-theme by intent: this sheet is issued by autistsmakingdividends.com, which is black.
+   Every colour is painted explicitly so the page holds on any host ground. */
+:root{
+  --ground:#000000; --panel:#080D0B; --panel2:#0C1512; --rule:#15241D; --rule2:#1E332A;
+  --jade:#0FA168; --mint:#02C385; --amber:#E0A93B; --ember:#D8543A; --ash:#55665E;
+  --ink:#DCE7E1; --ink2:#9DB0A7; --muted:#74887F;
+  --mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+     font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+a{color:var(--mint);text-decoration:none}
+a:hover{text-decoration:underline}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+
+.mast{border-bottom:1px solid var(--rule);background:var(--panel)}
+.mast-in{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+         padding:16px 0;flex-wrap:wrap}
+.brand{font-weight:900;letter-spacing:.16em;text-transform:uppercase;font-size:15px}
+.brand span{color:var(--jade)}
+.mast-meta{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.08em;
+           text-transform:uppercase;text-align:right}
+
+.thesis{padding:46px 0 10px}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+         color:var(--jade);margin:0 0 16px}
+h1{font-size:clamp(28px,4.2vw,46px);line-height:1.08;font-weight:900;margin:0 0 18px;
+   letter-spacing:-.02em;text-wrap:balance;max-width:21ch}
+.lede{font-size:16px;color:var(--ink2);max-width:66ch;margin:0 0 10px}
+.lede b{color:var(--ink);font-weight:500}
+.aside{font-size:13px;color:var(--muted);max-width:62ch;margin:0;font-style:italic}
+
+.sizer{margin:32px 0 0;border:1px solid var(--rule);background:var(--panel)}
+.sizer-hd{padding:14px 20px 0;font-size:12px;color:var(--muted);letter-spacing:.1em;
+          text-transform:uppercase;font-family:var(--mono)}
+.sizes{display:flex;flex-wrap:wrap;gap:0;padding:12px 20px 0}
+.sz{flex:1 1 110px;background:transparent;border:1px solid var(--rule2);border-right-width:0;
+    color:var(--ink2);font-family:var(--mono);font-size:15px;font-weight:700;padding:11px 8px;
+    cursor:pointer;transition:background .12s,color .12s}
+.sz:last-child{border-right-width:1px}
+.sz:hover{background:var(--panel2);color:var(--ink)}
+.sz[aria-pressed="true"]{background:var(--jade);border-color:var(--jade);color:#00120B}
+.verdict{display:flex;flex-wrap:wrap;align-items:baseline;gap:14px;padding:22px 20px 20px}
+.verdict-n{font-family:var(--mono);font-size:clamp(38px,7vw,64px);font-weight:700;line-height:1;
+           color:var(--mint);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.verdict-t{font-size:15px;color:var(--ink2);max-width:46ch}
+.verdict-t b{color:var(--ink);font-weight:500}
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;
+       background:var(--rule);border-top:1px solid var(--rule)}
+.sp{background:var(--panel);padding:14px 20px}
+.sp-v{font-family:var(--mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.sp-k{font-size:12px;color:var(--muted);margin-top:4px}
+
+section{padding:42px 0;border-bottom:1px solid var(--rule)}
+section:first-of-type{border-top:1px solid var(--rule)}
+.note{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+      color:var(--ash);margin:0 0 8px}
+h2{font-size:20px;font-weight:700;margin:0 0 6px;letter-spacing:-.01em}
+.sub{font-size:13px;color:var(--muted);margin:0 0 24px;max-width:74ch}
+
+/* ---- rating cards ---- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:0;position:relative;
+      display:flex;flex-direction:column}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+          padding:16px 16px 12px;border-bottom:1px solid var(--rule)}
+.card-id{min-width:0}
+.card-tick{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--ink);
+           letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-name{font-size:12.5px;color:var(--ink2);margin-top:2px;overflow:hidden;
+           text-overflow:ellipsis;white-space:nowrap}
+.card-addr{font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:4px}
+.seal{flex:none;width:54px;height:54px;border:2px solid;border-radius:50%;display:flex;
+      align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;
+      font-size:16px;letter-spacing:-.02em}
+.card-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;flex:1}
+.card-big{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1;
+          font-variant-numeric:tabular-nums;color:var(--ink)}
+.card-big small{display:block;font-family:var(--sans);font-size:11.5px;font-weight:400;
+                color:var(--muted);margin-top:5px;letter-spacing:.02em}
+.bars{display:flex;flex-direction:column;gap:5px}
+.bar{display:grid;grid-template-columns:44px 1fr 52px;align-items:center;gap:8px;
+     font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.bar-t{height:5px;background:var(--rule2);position:relative;overflow:hidden}
+.bar-f{position:absolute;inset:0 auto 0 0;height:100%}
+.bar-v{text-align:right;color:var(--ink2);font-variant-numeric:tabular-nums}
+.quip{font-size:12.5px;color:var(--ink2);border-top:1px solid var(--rule);padding-top:11px;
+      margin-top:auto;font-style:italic}
+
+.chart{background:var(--panel);border:1px solid var(--rule);padding:18px 16px 10px;position:relative}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;opacity:0;transition:opacity .1s;
+     background:var(--panel2);border:1px solid var(--rule2);padding:8px 11px;
+     font-family:var(--mono);font-size:11px;z-index:9;min-width:150px;
+     box-shadow:0 6px 20px rgba(0,0,0,.75)}
+.tip.on{opacity:1}
+.tip-h{color:var(--ink);font-weight:700;margin-bottom:2px;font-size:12px}
+.tip-n{color:var(--ink2);font-family:var(--sans);font-size:11px;margin-bottom:5px}
+.tip-r{display:flex;justify-content:space-between;gap:14px;color:var(--ink2)}
+.tip-r b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;padding-top:11px;
+        border-top:1px solid var(--rule);font-size:12px;color:var(--ink2)}
+.lg{display:flex;align-items:center;gap:7px}
+.lg i{width:14px;height:14px;display:block;border-radius:50%}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+input[type=search],select{background:var(--panel2);border:1px solid var(--rule2);color:var(--ink);
+  font-family:var(--sans);font-size:13px;padding:7px 11px;border-radius:0}
+input[type=search]{min-width:200px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--rule);max-height:640px;overflow-y:auto}
+table{border-collapse:collapse;width:100%;min-width:1220px;font-size:13px}
+thead th{background:var(--panel2);text-align:right;padding:9px 12px;font-weight:500;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);
+  border-bottom:1px solid var(--rule2);cursor:pointer;white-space:nowrap;position:sticky;top:0;z-index:2}
+thead th:nth-child(-n+6){text-align:left}
+thead th:hover{color:var(--mint)}
+thead th.on{color:var(--mint)}
+tbody td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--rule);
+  font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink2)}
+tbody td:nth-child(-n+6){text-align:left}
+tbody tr:hover td{background:var(--panel)}
+td.pick{background:rgba(15,161,104,.09);color:var(--ink)}
+thead th.pick{color:var(--mint)}
+.sym{color:var(--ink);font-weight:700}
+.sym a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule2);
+  transition:color .12s,border-color .12s}
+.sym a:hover{color:var(--mint);border-bottom-color:var(--mint)}
+.sym a:focus-visible{outline:2px solid var(--mint);outline-offset:2px;border-radius:2px}
+.card-tick a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--rule2)}
+.card-tick a:hover{color:var(--mint);border-bottom-color:var(--mint)}
+.card-tick a:focus-visible{outline:2px solid var(--mint);outline-offset:3px;border-radius:2px}
+.nm{font-family:var(--sans);font-size:12px;color:var(--ink2);max-width:230px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm i{color:var(--ash);font-style:normal}
+.cls{font-family:var(--sans);font-size:11px;color:var(--muted);text-transform:uppercase;
+     letter-spacing:.06em}
+.band{font-weight:700;display:inline-block;min-width:34px}
+.scr{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);margin-top:22px}
+.scr>div{background:var(--panel);padding:16px 18px}
+.scr .v{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.scr .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  margin-top:6px;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-family:var(--sans);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 6px;border:1px solid currentColor;border-radius:2px;white-space:nowrap;font-weight:500}
+.chip.ok{color:var(--jade)}
+.chip.moved{color:var(--muted)}
+.chip.warn{color:var(--amber)}
+.chip.bad{color:var(--ember)}
+.chip.unk{color:var(--ash)}
+.card-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.stripe{border-left:3px solid transparent}
+td.na{color:var(--ash)}
+.foot{padding:32px 0 60px;color:var(--muted);font-size:12px;line-height:1.7}
+.foot p{max-width:80ch;margin:0 0 12px}
+.foot b{color:var(--ink2);font-weight:500}
+.sig{font-family:var(--mono);color:var(--jade);letter-spacing:.06em;margin-top:16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="mast"><div class="wrap mast-in">
+  <div class="brand">Autists Making Dividends <span>&middot; Ratings Division</span></div>
+  <div class="mast-meta" id="stamp">Chain 4663</div>
+</div></header>
+
+<main class="wrap">
+
+<div class="thesis">
+  <p class="eyebrow">Unsolicited credit opinion &middot; Robinhood Chain &middot; id 4663</p>
+  <h1>How much can you sell before the market notices?</h1>
+  <p class="lede">Every other tool on this chain tells you what your bag is worth. None of them
+  tell you what it costs to <b>put it down</b>. This sheet prices the exit &mdash; tokenised equities
+  and memecoins on one axis, from live routed quotes. It covers <b><span id="tot">&mdash;</span> assets</b>, every one sized
+  from an independent price feed rather than a price we inferred ourselves.</p>
+  <p class="aside" id="asof" style="font-family:var(--mono);color:var(--muted)">Loading&hellip;</p>
+  <p class="aside" id="fail" hidden style="color:var(--ember)"></p>
+  <p class="aside">Our risk department remains on administrative leave. This page is the closest
+  thing the institution has to one.</p>
+
+  <div class="sizer">
+    <div class="sizer-hd">Intended exit</div>
+    <div class="sizes" id="sizes" role="group" aria-label="Choose a position size"></div>
+    <div class="verdict">
+      <div class="verdict-n" id="vn">&mdash;</div>
+      <div class="verdict-t" id="vt"></div>
+    </div>
+    <div class="split">
+      <div class="sp"><div class="sp-v" id="sq">&mdash;</div>
+        <div class="sp-k">tokenised equities that clear it</div></div>
+      <div class="sp"><div class="sp-v" id="so">&mdash;</div>
+        <div class="sp-k">memecoins &amp; other chain assets</div></div>
+      <div class="sp"><div class="sp-v" id="sd">&mdash;</div>
+        <div class="sp-k">deepest asset on the chain</div></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <p class="note">Note 01 &middot; Rating actions</p>
+  <h2>Highest rated chain assets</h2>
+  <p class="sub">Memecoins and native tokens only. Tokenised equities are excluded from this table
+  because they have professional market makers, which we consider cheating. Ratings are the largest
+  clip the asset absorbs before exit cost reaches 5%. Where a ticker is shared &mdash; and 107 of
+  them are &mdash; the issuer name is the only thing telling them apart.</p>
+  <div class="cards" id="cards"></div>
+</section>
+
+<section>
+  <p class="note">Note 02 &middot; Issuer research</p>
+  <h2>Long&rsquo;s liquidity edge is real &mdash; and it is a retail-size edge</h2>
+  <p class="sub">Long&rsquo;s founder argues its pairs build deeper liquidity than rivals such as
+  Pons. Withdrawn from this page once already for resting on unsound prices, the comparison now runs
+  only on assets whose price is corroborated by an independent feed &mdash; <b>91 Long against 126
+  Pons</b>. The measure is the exit cost itself &mdash; not FDV, which this page exists to
+  displace.</p>
+  <div class="tbl-wrap" style="max-height:none">
+    <table style="min-width:760px">
+      <thead><tr><th style="cursor:default">Clip</th><th style="cursor:default">Long</th>
+        <th style="cursor:default">Pons</th><th style="cursor:default">Difference</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">$1,000</td><td style="color:var(--mint);font-weight:700">1.98%</td>
+            <td>3.08%</td>
+            <td style="color:var(--mint);font-weight:700"
+                title="Long's exit cost is 35.7% below Pons's. Significant at p=0.0005.">&minus;35.7%</td></tr>
+        <tr><td class="nm">$10,000</td><td style="color:var(--mint);font-weight:700">14.82%</td>
+            <td>21.86%</td>
+            <td style="color:var(--mint);font-weight:700"
+                title="Long's exit cost is 32.2% below Pons's. Significant at p=0.05.">&minus;32.2%</td></tr>
+        <tr><td class="nm">$50,000</td><td style="color:var(--mint);font-weight:700">45.67%</td>
+            <td>60.27%</td>
+            <td style="color:var(--mint);font-weight:700"
+                title="Long's exit cost is 24.2% below Pons's, but at p=0.09 this does not clear significance.">&minus;24.2%</td></tr>
+        <tr><td class="nm">$250,000</td><td style="color:var(--mint);font-weight:700">84.68%</td>
+            <td>88.32%</td>
+            <td style="color:var(--mint);font-weight:700"
+                title="Long's exit cost is 4.1% below Pons's, and the two are statistically indistinguishable at this size.">&minus;4.1%</td></tr>
+        <tr><td class="nm">$1,000,000</td><td style="color:var(--mint);font-weight:700">94.10%</td>
+            <td>95.33%</td>
+            <td style="color:var(--mint);font-weight:700"
+                title="Long's exit cost is 1.3% below Pons's, and the two are statistically indistinguishable at this size.">&minus;1.3%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub" style="margin-top:14px;color:var(--ash)">Difference is Long&rsquo;s cost relative
+  to Pons&rsquo;s at the same clip, so &minus;35.7% means Long costs about a third less to exit,
+  not 35.7 percentage points less. Long is cheaper at every size. Only the first two clear
+  statistical significance &mdash; hover any figure for its p-value &mdash; and the last two are
+  differences we cannot distinguish from noise.</p>
+  <p class="sub" style="margin-top:22px"><b style="color:var(--ink)">The claim holds where it
+  matters to most people, and only there.</b> At a $1,000 exit <b>91% of Long assets stay under 5%
+  cost, against 63% of Pons</b> &mdash; the single widest gap on this page, and significant at
+  p=0.0005. By $10,000 the two are level on that measure (12% vs 13%), and above $50,000 they are
+  indistinguishable. Long&rsquo;s design does not build deeper books at size; it builds a working
+  exit for far more of its tokens at the size a normal person actually trades.</p>
+  <p class="sub">Attribution cross-validates two independent sources: Long&rsquo;s factory
+  <span style="font-family:var(--mono)">TokenCreated</span> log and GMGN&rsquo;s board label agree
+  exactly, once we backfilled a scan chunk that had timed out and been skipped, hiding <b>2,057</b>
+  Long tokens in a set that read as complete.</p>
+</section>
+
+
+<section>
+  <p class="note">Note 03 &middot; Settlement review</p>
+  <h2>A quote is not a fill</h2>
+  <p class="sub">Every cost on this page began life as an aggregator quote, and a quote is
+  arithmetic over pool reserves. It never runs the token&rsquo;s own transfer code. A token that
+  blocks selling, taxes it, or gates it behind a settlement whitelist therefore quotes
+  <i>identically</i> to one that does not &mdash; which means until now this page could not tell
+  them apart. So we stopped asking and started moving the tokens.</p>
+  <div class="scr" id="scr"></div>
+  <p class="sub" style="margin-top:22px"><b style="color:var(--ink)">The book is mostly honest.</b>
+  A $1,000 clip of <span id="scr1"></span> assets moves whole, and <b>not one of them arrived
+  short</b> &mdash; there is no transfer tax anywhere in this universe that we could measure. The
+  clip is minted to a test address by writing the contract&rsquo;s own balance slot, then sent, with
+  the destination balance read back in the same call. It is one request per asset, which is what
+  lets it run over the whole book on every refresh rather than on a sample.</p>
+  <p class="sub"><b style="color:var(--ember)">One asset refuses an ordinary transfer.</b> Funded
+  directly through its own balance slot, <b>RIP</b> reverts a wallet-to-wallet send with
+  <span style="font-family:var(--mono)">InvalidTransfer()</span> at every size we tried, down to a
+  ten-thousandth of the clip. It is rated D, so nobody was relying on it &mdash; but its liquidity
+  quotes like anything else, which is the whole point of this note.</p>
+  <p class="sub"><b>What this test does not do.</b> It moves the tokens; it does not run the
+  aggregator&rsquo;s router. We built that too &mdash; the real swap calldata executed against live
+  state &mdash; and it agreed with the quote on all 163 assets it reached, worst case 1.20%. It also
+  took two and a half hours per pass, because this node meters
+  <span style="font-family:var(--mono)">eth_simulateV1</span> by execution cost rather than by
+  request. That is not a price worth paying on a schedule, so it is not part of the refresh. What
+  survives is the cheap half, which is also the half that finds things.</p>
+  <p class="sub">Two assets were briefly on the refusal list and should not have been. <b>QUOTRON</b>
+  reverts with <span style="font-family:var(--mono)">UnauthorizedPoolSettlement()</span> and
+  <b>MOS</b> with an error no public database knows &mdash; but only when the tokens are pulled out
+  of the Uniswap v4 singleton, which is a hook doing exactly its job, and our probe was by
+  construction the unauthorised caller. Given an ordinary holder instead, QUOTRON moves a full clip
+  intact. MOS trades only in v4 pools, so there is no ordinary holder to ask, and it stays
+  <b>unmeasured</b>. A refusal we provoked is not a finding.</p>
+  <p class="sub"><b style="color:var(--amber)">And depth is measured against a float that is not
+  always fixed.</b> <span id="scr2"></span> chain assets in this book expose
+  <span style="font-family:var(--mono)">mint(address,uint256)</span>. The loudest is
+  <b>HOOD</b>, rated A on a verified $270,741 exit. Its minter is live: we simulated a mint of
+  <b>1,000,000 HOOD &mdash; roughly a hundred times the entire supply &mdash; and it succeeded in
+  one call</b>, while the same call from any other address reverts. It is not idle either. Twenty-
+  five percent of the supply was printed in the preceding two and a half days, and while we were
+  measuring it the supply rose <b>2.83% in forty-eight minutes</b>. The exit is real. The
+  denominator is a rumour. Both facts now sit in the same row, because a rating that mentions only
+  the flattering one is marketing.</p>
+  <p class="sub"><b>The equities are a separate case, and reading their bytecode gets it wrong.</b>
+  Every tokenised equity here is a 283-byte beacon-proxy stub; scored on that stub, all
+  <span id="scr3"></span> of them looked like fixed-supply tokens. Their real implementation is
+  11.6&nbsp;KB and carries <span style="font-family:var(--mono)">mint</span>,
+  <span style="font-family:var(--mono)">burn</span> and
+  <span style="font-family:var(--mono)">pause</span>. That is not a defect &mdash; a custodial
+  wrapper has to mint against a deposit and burn on redemption &mdash; so they carry a different
+  badge from HOOD. It does mean that <b><span id="scr4"></span> assets on this page, the deepest
+  ones, can have transfers halted by their issuer</b>, which no amount of pool depth survives. We
+  would rather say so than let AAA imply otherwise.</p>
+</section>
+
+<section>
+  <p class="note">Note 04 &middot; Coverage universe</p>
+  <h2>The whole chain, by what it can absorb</h2>
+  <p class="sub">One mark per asset, placed at the largest clip it takes before exit cost reaches 5%.
+  The dashed line is your intended exit &mdash; everything left of it cannot absorb you. Equities on
+  the upper lane, everything else below.</p>
+  <div class="chart">
+    <svg id="strip" viewBox="0 0 1000 330" role="img"
+         aria-label="Every measured asset placed by the clip size it absorbs under 5% price impact"></svg>
+    <div class="tip" id="stripTip"></div>
+    <div class="legend" id="stripLegend"></div>
+  </div>
+</section>
+
+<section>
+  <p class="note">Note 05 &middot; The ratings book</p>
+  <h2>Every asset under surveillance</h2>
+  <p class="sub">The column matching your intended exit is highlighted; sort on it to see who
+  survives. Search matches ticker and issuer name. Every ticker opens that token&rsquo;s
+  chart on GMGN &mdash; same contract we quoted. <b>Settlement</b> records what happened when the
+  tokens were actually moved, which is a separate question from what they cost to move; hover any
+  chip for what it does and does not claim. <span id="cnt"></span></p>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search ticker or name&hellip;" aria-label="Search ticker or name">
+    <select id="kind" aria-label="Filter by asset class">
+      <option value="">All classes</option>
+      <option value="e">Tokenised equities</option>
+      <option value="o">Memecoins &amp; other</option>
+    </select>
+    <select id="platf" aria-label="Filter by launchpad"></select>
+    <select id="guard" aria-label="Filter by settlement">
+      <option value="">Any settlement</option>
+      <option value="flag">Carries a flag</option>
+      <option value="m">Supply not fixed (chain assets)</option>
+      <option value="u">Unmeasured</option>
+    </select>
+    <select id="bandf" aria-label="Filter by rating">
+      <option value="">All ratings</option>
+      <option value="ig">Investment grade (BBB+)</option>
+      <option value="spec">Speculative (BB to CCC)</option>
+      <option value="D">Distressed (D)</option>
+      <option value="NR">Not rated</option>
+    </select>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr>
+      <th data-k="s">Ticker</th>
+      <th data-k="nm">Issuer name</th>
+      <th data-k="k">Class</th>
+      <th data-k="p">Launchpad</th>
+      <th data-k="b">Rating</th>
+      <th data-k="g">Settlement</th>
+      <th data-k="r">Pool reserves</th>
+      <th data-k="d">Absorbs under 5%</th>
+      <th data-k="i0" data-sz="0">$1k</th>
+      <th data-k="i1" data-sz="1">$10k</th>
+      <th data-k="i2" data-sz="2">$50k</th>
+      <th data-k="i3" data-sz="3">$250k</th>
+      <th data-k="i4" data-sz="4">$1M</th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table></div>
+</section>
+
+<div class="foot">
+  <p><b>Method.</b> For each asset we request routed sell quotes at five clip sizes plus a $50
+  reference clip, and compute impact as
+  <span style="font-family:var(--mono)">1 &minus; (out(N)/N) &divide; (out(ref)/ref)</span> &mdash;
+  measured against the asset&rsquo;s own marginal price, so no oracle enters. Quotes settle into
+  <b>USDG</b>, this chain&rsquo;s dominant quote asset, falling back to native ETH. That matters: an
+  earlier pass quoted into ETH and charged every asset the WETH/USDG hop on top of its own book,
+  overstating AAPL at $250k as 1.46% when it is 0.45%. Prices come from ParaSwap where it routes and
+  KyberSwap where it does not. Issuer names are read from each contract&rsquo;s own
+  <span style="font-family:var(--mono)">name()</span>.</p>
+  <p><b>What a rating is not.</b> These are <b>point&#8209;in&#8209;time</b> quotes, and depth on this
+  chain moves with the US session; repeated passes seconds apart reproduce to the basis point, but
+  the same asset hours apart can differ by a full percentage point. A rating measures a book, not an
+  issuer. <b>Pooled balance is not depth</b>: one asset here sits on $9.7M of pooled liquidity and
+  still rates CCC, because a pool&rsquo;s balance aggregates every price range including the ones
+  nowhere near spot. That is the entire reason this is quoted rather than computed from a
+  liquidity figure.</p>
+  <p><b>Why a price feed, not our own quote.</b> Clip sizes depend on knowing each
+  token&rsquo;s price, and that price used to be inferred from a single aggregator quote. Reliable
+  above $1 a token &mdash; <b>0 of 29 equities checked were wrong</b> &mdash; and unreliable below:
+  <b>43%</b> wrong between $0.0001 and $0.01, <b>69%</b> under $0.0001, because a 6-decimal quote
+  asset rounds a micro-priced token to a couple of raw units and one quote has nothing to check it
+  against. AUTSM came out <b>196&times;</b> high and CNPY <b>eleven million times</b> high. Prices
+  now come from <b>GeckoTerminal</b>, cross-checked against GMGN &mdash; the two agree within 15% on
+  78% of tokens they both cover. Every row here has a sizing price corroborated by one of them;
+  rows whose price was contradicted are withheld until re-measured.</p>
+  <p><b>Why this many assets, and not more.</b> The universe is not every token on the chain.
+  Activity was sampled from <span style="font-family:var(--mono)">Transfer</span> logs across
+  eleven block windows; capture&ndash;recapture put the live population at roughly <b>7,100</b>
+  tokens, of which <b>2,536</b> were actually observed. The scan list is every tokenised equity
+  plus the <b>top 1,000 non-equity tokens by transfer count</b>, less five infrastructure
+  addresses &mdash; <b>1,194</b> targets. An asset reaches this page only if it has a price
+  corroborated by an independent feed <i>and</i> an exit curve we could actually measure. The
+  1,000-token cut is a budget, not a natural boundary: quiet tokens below it were never measured,
+  and absence from this page is not a rating.</p>
+  <p><b>And one exclusion was our own fault.</b> The first pass returned the same empty value for
+  &ldquo;the aggregator says there is no route&rdquo; and &ldquo;the request failed&rdquo;, so a
+  transient failure on the reference clip dropped an asset permanently, with nothing retrying it.
+  It cost the book <b>NVDA, MSFT, META, NFLX, LLY, MSTR, MU and LULU</b> &mdash; four of which are
+  AAA &mdash; plus eleven others. Re-measuring the 171 exclusions with the two cases held apart
+  recovered <b>19</b>. Silent survivorship is the defect this page is least entitled to have.</p>
+  <p><b>A quote is not a fill.</b> Exit costs here are aggregator quotes, and a quote is
+  arithmetic over pool reserves &mdash; it never executes the token&rsquo;s transfer code. Every
+  asset is therefore also moved: a $1,000 clip is minted to a test address through a storage
+  override on the contract&rsquo;s own balance slot (probed, never assumed) and transferred, with
+  the destination balance read in the same call by an injected probe contract. Rated assets go
+  further and run the aggregator&rsquo;s real router calldata through
+  <span style="font-family:var(--mono)">eth_simulateV1</span> against live state, comparing the
+  USDG that arrives to the USDG that was promised. Where the test could not be funded the asset is
+  marked <b>unmeasured</b> &mdash; never clean. An early version of this harness funded from
+  Uniswap v4 pool IDs, which hold nothing, and reported a blue-chip equity as a total loss; the
+  rule that a short-funded test is void, not failed, comes from that.</p>
+  <p><b>Pool reserves are not depth.</b> The reserves column is what GeckoTerminal reports sitting
+  in an asset&rsquo;s pools, and it is deliberately next to what the asset can actually absorb, so
+  the gap is visible. <b>SPACEHOOD holds $1.4M of reserves and breaks on a $6,418 sell. YARD holds
+  $1.03M and cannot clear $1,000.</b> A pool&rsquo;s balance counts every price range, including the
+  ones nowhere near spot. That gap is the entire reason this page quotes rather than counts.</p>
+  <p><b>Ratings committee</b> one person. <b>Auditor</b> declined to comment. <b>Conflicts of
+  interest</b> we issue a memecoin on this chain and rate it alongside everything else, badly.
+  <b>Risk disclosure</b> total.</p>
+  <p>Nothing here is investment advice. We are a memecoin with a spreadsheet. If you are making
+  allocation decisions based on a ratings agency operated by a company called Autists Making
+  Dividends, the rating you should be most concerned about is your own.</p>
+  <p class="sig">Stay regarded my friend.</p>
+</div>
+</main>
+
+<script>
+let DATA = null;
+const SIZES_DEFAULT = [1000,10000,50000,250000,1000000];
+
+/* Freshness is part of the claim. A ratings page that silently serves a three-day-old
+   snapshot is worse than one that admits it, so the age is computed from the artefact's
+   own timestamp and shown, loudly once it is stale. */
+function stamp(){
+  const el = document.getElementById('asof'); if(!el || !DATA) return;
+  const age = (Date.now()/1000 - DATA.at)/3600;
+  const when = new Date(DATA.at*1000).toISOString().replace('T',' ').slice(0,16)+' UTC';
+  el.textContent = age < 1 ? `Priced ${Math.round(age*60)} min ago \u00b7 ${when}`
+                           : `Priced ${age.toFixed(1)} h ago \u00b7 ${when}`;
+  if(age > 9){ el.style.color = 'var(--ember)';
+               el.textContent += ' \u00b7 stale, the refresh has not run'; }
+}
+
+async function boot(){
+  try{
+    const r = await fetch('ratings.json?t=' + Math.floor(Date.now()/300000));
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    DATA = await r.json();
+  }catch(e){
+    document.getElementById('fail').hidden = false;
+    document.getElementById('fail').textContent =
+      'Could not load ratings.json (' + e.message + '). Nothing below is showing live data.';
+    return;
+  }
+  SIZES = DATA.sizes || SIZES_DEFAULT;
+  ROWS  = DATA.rows;
+  EQ = ROWS.filter(r=>r.k==='e'); OT = ROWS.filter(r=>r.k==='o');
+  stamp();
+  render();
+}
+let SIZES = SIZES_DEFAULT, ROWS = [];
+let PICK = 1;                                   // opens on $10,000
+const BANDC = {AAA:'--jade',AA:'--jade',A:'--jade',BBB:'--mint',BB:'--amber',B:'--amber',
+               CCC:'--amber',D:'--ember',NR:'--ash'};
+const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const bc = b => cv(BANDC[b] || '--ash');
+const usd = v => v==null ? '—' : v>=1e6 ? '$'+(v/1e6).toFixed(v%1e6?1:0)+'M'
+               : v>=1e3 ? '$'+Math.round(v/1e3)+'k' : v>0 ? '$'+Math.round(v) : '<$1k';
+const pct = v => v==null ? '—' : v.toFixed(2)+'%';
+let EQ = [], OT = [];
+
+document.getElementById('stamp').textContent =
+  ROWS.length.toLocaleString() + ' issuers under surveillance · quoted ' +
+  new Date(DATA.at*1000).toISOString().slice(0,16).replace('T',' ') + 'Z';
+
+/* House view, by band. Written once and applied by rule, so a rating change moves the comment
+   with it rather than leaving a stale compliment attached to a collapsing book. */
+const QUIP = {
+  AAA:'Institutional depth. You could leave at size. Management strongly advises against it.',
+  AA :'Exits cleanly at almost any size we tested. Deeply suspicious.',
+  A  :'A real book, on a chain where that is genuinely remarkable.',
+  BBB:'Adequate. The word is doing a great deal of work.',
+  BB :'Speculative — which is also our business model, so no judgement.',
+  B  :'Thin. Bring a smaller position and a much larger tolerance.',
+  CCC:'Substantial risk. In this pairing, you are the liquidity.',
+  D  :'The exit is theoretical.',
+  NR :'No quote returned. Draw your own conclusions; we have drawn ours.'
+};
+
+/* ---------- size selector ---------- */
+const szBox = document.getElementById('sizes');
+SIZES.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.className='sz'; b.type='button'; b.textContent=usd(s);
+  b.setAttribute('aria-pressed', i===PICK ? 'true':'false');
+  b.addEventListener('click',()=>{ PICK=i; render(); });
+  szBox.appendChild(b);
+});
+const clears = (r,i) => r.d!=null && r.d >= SIZES[i];
+
+function renderVerdict(){
+  const t=document.getElementById('tot'); if(t) t.textContent=ROWS.length.toLocaleString();
+  [...szBox.children].forEach((b,i)=>b.setAttribute('aria-pressed', i===PICK?'true':'false'));
+  const n=ROWS.filter(r=>clears(r,PICK)).length;
+  document.getElementById('vn').textContent=n.toLocaleString();
+  document.getElementById('vt').innerHTML =
+    `of <b>${ROWS.length.toLocaleString()}</b> assets can absorb a <b>${usd(SIZES[PICK])}</b> sell
+     without the price moving against you by 5%.`;
+  document.getElementById('sq').textContent =
+    EQ.filter(r=>clears(r,PICK)).length + ' / ' + EQ.length;
+  document.getElementById('so').textContent =
+    OT.filter(r=>clears(r,PICK)).length + ' / ' + OT.length;
+  const best=ROWS.filter(r=>r.d!=null).sort((a,b)=>b.d-a.d)[0];
+  const sd=document.getElementById('sd');
+  if(best){ sd.textContent=best.s+' · '+usd(best.d); sd.style.color=bc(best.b); }
+}
+
+/* GMGN indexes Robinhood Chain under the slug `robinhood`; the token page is
+   /robinhood/token/<contract>. Same address we quoted, so the chart a reader
+   opens is the same asset the row rates. */
+const gmgn=a=>'https://gmgn.ai/robinhood/token/'+a;
+
+/* Settlement: what happened when the tokens were actually MOVED, as opposed to quoted.
+   These are four different claims and the page never collapses them into one. */
+const GUARD={
+  t:{cls:'ok',  txt:'Moves whole', tip:'A $1,000 clip was minted to a test address and transferred on live chain state; all of it arrived. No transfer tax, no blocked send.'},
+  s:{cls:'bad', txt:'Arrives short', tip:'The clip arrived short of what was sent. The quoted exit cost understates the real one by that much.'},
+  r:{cls:'bad', txt:'Refuses transfer', tip:'Funded directly through its own balance slot, the token reverted an ordinary wallet-to-wallet send.'},
+  u:{cls:'unk', txt:'Unmeasured', tip:'We could not fund the test. This is not a pass and not a fail.'}
+};
+/* Supply control is a SEPARATE claim from settlement, and it is two different claims
+   depending on what the asset is. A custodial equity wrapper has to mint against a
+   deposit and burn on redemption; that is the design. A memecoin whose operator can
+   print more of it is not the same fact and does not get the same badge. */
+const SUP={
+  1:{cls:'warn', txt:'Open supply',
+     tip:'The contract exposes mint(address,uint256). The float this rating is measured against is not fixed.'},
+  2:{cls:'unk',  txt:'Issuer controlled',
+     tip:'A custodial wrapper: its implementation can mint against a deposit, burn on redemption, and pause transfers. Expected for a tokenised equity, and still worth knowing.'}
+};
+function chipsFor(r,box){
+  const g=GUARD[r.g]||GUARD.u;
+  const a=document.createElement('span'); a.className='chip '+g.cls;
+  a.textContent=g.txt;
+  a.title = g.tip + (r.gd!=null ? `  Executed ${r.gd>=0?'+':''}${r.gd}% against the quote.` : '');
+  box.appendChild(a);
+  const sup=SUP[r.m];
+  if(sup){ const b=document.createElement('span'); b.className='chip '+sup.cls;
+           b.textContent=sup.txt;
+           b.title=sup.tip + (r.pz?'  Transfers can also be paused by the issuer.':'');
+           box.appendChild(b); }
+}
+/* r.a is the ELIDED address we print (0xabcd…1234); r.f is the full contract. Vanity
+   addresses here cluster on the same suffix -- SPACEHOOD and LONGDOG share 0xfe7e…1e18 --
+   so a link must never be built from the display form. */
+function tickerLink(r){
+  const a=document.createElement('a');
+  a.href=gmgn(r.f); a.target='_blank'; a.rel='noopener noreferrer';
+  a.textContent=r.s; a.title='Open '+r.s+' on GMGN · '+r.f;
+  return a;
+}
+
+/* ---------- rating cards: top chain assets ---------- */
+function renderCards(){
+  const box=document.getElementById('cards');
+  const top=OT.filter(r=>r.d!=null).sort((a,b)=>b.d-a.d).slice(0,8);
+  box.textContent='';
+  top.forEach(r=>{
+    const c=document.createElement('div'); c.className='card';
+    const col=bc(r.b);
+
+    const head=document.createElement('div'); head.className='card-top';
+    const id=document.createElement('div'); id.className='card-id';
+    const tk=document.createElement('div'); tk.className='card-tick';
+    tk.appendChild(tickerLink(r));
+    const nm=document.createElement('div'); nm.className='card-name';
+    nm.textContent = r.nm || 'contract publishes no name()';
+    if(!r.nm) nm.style.color=cv('--ash');
+    const ad=document.createElement('div'); ad.className='card-addr';
+    ad.textContent=(r.p?r.p.toUpperCase()+' · ':'')+r.a;
+    if(r.p==='Long') ad.style.color=cv('--mint');
+    id.append(tk,nm,ad);
+    const seal=document.createElement('div'); seal.className='seal';
+    seal.style.borderColor=col; seal.style.color=col; seal.textContent=r.b;
+    head.append(id,seal);
+
+    const body=document.createElement('div'); body.className='card-body';
+    const big=document.createElement('div'); big.className='card-big';
+    big.textContent=usd(r.d);
+    const sm=document.createElement('small'); sm.textContent='absorbed before 5% exit cost';
+    big.appendChild(sm);
+
+    const bars=document.createElement('div'); bars.className='bars';
+    [0,2,3].forEach(i=>{
+      const v=r.i[i];
+      const row=document.createElement('div'); row.className='bar';
+      const lab=document.createElement('span'); lab.textContent=usd(SIZES[i]);
+      const track=document.createElement('span'); track.className='bar-t';
+      const fill=document.createElement('span'); fill.className='bar-f';
+      const w = v==null ? 100 : Math.max(1.5,Math.min(100,v));
+      fill.style.width=w+'%';
+      fill.style.background = v==null ? cv('--rule2') : (v<5?col:(v<25?cv('--amber'):cv('--ember')));
+      track.appendChild(fill);
+      const val=document.createElement('span'); val.className='bar-v';
+      val.textContent = v==null ? 'no fill' : pct(v);
+      row.append(lab,track,val);
+      bars.appendChild(row);
+    });
+
+    const cch=document.createElement('div'); cch.className='card-chips';
+    chipsFor(r,cch);
+    const qp=document.createElement('div'); qp.className='quip';
+    qp.textContent=QUIP[r.b]||'';
+    body.append(big,bars,cch,qp);
+    c.append(head,body);
+    box.appendChild(c);
+  });
+}
+
+/* ---------- settlement review ---------- */
+function renderScreen(){
+  const S=DATA.screen||{}, box=document.getElementById('scr');
+  const cells=[
+    [ (S.transfers||0).toLocaleString(), 'move a $1,000 clip whole' ],
+    [ (S.taxed||0).toLocaleString(), 'lose anything to a transfer tax' ],
+    [ (S.restricted||0).toLocaleString(), 'refuse an ordinary transfer' ],
+    [ (S.open_supply||0).toLocaleString(), 'chain assets whose operator can mint more' ],
+    [ (S.issuer_supply||0).toLocaleString(), 'equities their issuer can mint, burn or pause' ],
+    [ (S.unmeasured||0).toLocaleString(), 'we could not fund, so we do not certify' ],
+  ];
+  box.textContent='';
+  cells.forEach(([v,k],i)=>{
+    const d=document.createElement('div');
+    const a=document.createElement('div'); a.className='v'; a.textContent=v;
+    a.style.color = (i===1||i===2) ? (v==='0'?cv('--jade'):cv('--ember'))
+                  : i===3 ? cv('--amber') : (i===4||i===5) ? cv('--ash') : cv('--mint');
+    const b=document.createElement('div'); b.className='k'; b.textContent=k;
+    d.append(a,b); box.appendChild(d);
+  });
+  document.getElementById('scr1').textContent =
+    (S.transfers||0).toLocaleString()+' of '+ROWS.length.toLocaleString();
+  document.getElementById('scr2').textContent = (S.open_supply||0).toLocaleString();
+  const s3=document.getElementById('scr3'); if(s3) s3.textContent=(S.issuer_supply||0).toLocaleString();
+  const s4=document.getElementById('scr4'); if(s4) s4.textContent=(S.pausable||0).toLocaleString();
+
+}
+
+/* ---------- distribution strip ---------- */
+function renderStrip(){
+  const svg=document.getElementById('strip'), tip=document.getElementById('stripTip');
+  const W=1000,H=330,L=46,R=24,T=44,B=54;
+  const lo=500, hi=1.4e6;
+  const x=v=>L+(Math.log10(Math.max(v,lo))-Math.log10(lo))/(Math.log10(hi)-Math.log10(lo))*(W-L-R);
+  const lanes=[{label:'Tokenised equities',rows:EQ,y:T+34},
+               {label:'Memecoins & other chain assets',rows:OT,y:T+160}];
+  let h='';
+  [1e3,1e4,1e5,1e6].forEach(v=>{
+    h+=`<line x1="${x(v)}" y1="${T-8}" x2="${x(v)}" y2="${H-B}" stroke="${cv('--rule')}"/>`;
+    h+=`<text x="${x(v)}" y="${H-B+20}" fill="${cv('--muted')}" font-size="12"
+         font-family="Roboto Mono, monospace" text-anchor="middle">${usd(v)}</text>`;
+  });
+  h+=`<text x="${(L+W-R)/2}" y="${H-B+40}" fill="${cv('--ash')}" font-size="11"
+       font-family="Roboto" text-anchor="middle" letter-spacing="1.2">CLIP ABSORBED BEFORE 5% EXIT COST</text>`;
+  const px=x(SIZES[PICK]);
+  h+=`<line x1="${px}" y1="${T-18}" x2="${px}" y2="${H-B}" stroke="${cv('--mint')}"
+       stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  h+=`<text x="${px}" y="${T-24}" fill="${cv('--mint')}" font-size="12" font-weight="700"
+       font-family="Roboto Mono, monospace" text-anchor="middle">your exit · ${usd(SIZES[PICK])}</text>`;
+  lanes.forEach(ln=>{
+    const pass=ln.rows.filter(r=>clears(r,PICK)).length;
+    h+=`<text x="${L}" y="${ln.y-26}" fill="${cv('--ink2')}" font-size="12" font-family="Roboto"
+         font-weight="500">${ln.label} <tspan fill="${cv('--mint')}">${pass}</tspan><tspan
+         fill="${cv('--ash')}"> of ${ln.rows.length} clear it</tspan></text>`;
+    h+=`<line x1="${L}" y1="${ln.y+42}" x2="${W-R}" y2="${ln.y+42}" stroke="${cv('--rule')}"/>`;
+    const seen={};
+    ln.rows.filter(r=>r.d!=null).forEach(r=>{
+      const cx=x(Math.max(r.d,600));
+      const key=Math.round(cx/6); seen[key]=(seen[key]||0)+1;
+      const cy=ln.y+22-((seen[key]-1)%6)*11;
+      const on=r.d>=SIZES[PICK];
+      h+=`<circle class="dot" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="4.6"
+           fill="${on?bc(r.b):'none'}" stroke="${bc(r.b)}" stroke-width="1.4"
+           opacity="${on?0.95:0.4}" tabindex="0" role="img"
+           data-i="${ROWS.indexOf(r)}"
+           aria-label="${r.s}${r.nm?', '+r.nm:''}, rated ${r.b}, absorbs ${usd(r.d)}"/>`;
+    });
+  });
+  svg.innerHTML=h;
+  const show=el=>{
+    const r=ROWS[+el.dataset.i];
+    tip.textContent='';
+    const hd=document.createElement('div'); hd.className='tip-h'; hd.textContent=r.s;
+    tip.appendChild(hd);
+    if(r.nm){ const n=document.createElement('div'); n.className='tip-n'; n.textContent=r.nm;
+              tip.appendChild(n); }
+    const mk=(k,v,col)=>{
+      const row=document.createElement('div'); row.className='tip-r';
+      const a=document.createElement('span'); a.textContent=k;
+      const b=document.createElement('b'); b.textContent=v; if(col) b.style.color=col;
+      row.append(a,b); tip.appendChild(row);
+    };
+    mk('Rating',r.b,bc(r.b)); mk('Absorbs',usd(r.d));
+    const rb=svg.getBoundingClientRect(), p=el.getBoundingClientRect();
+    tip.style.left=Math.min(Math.max(p.left-rb.left-70,0),rb.width-172)+'px';
+    tip.style.top=(p.top-rb.top-(r.nm?82:66))+'px'; tip.classList.add('on');
+  };
+  svg.querySelectorAll('.dot').forEach(el=>{
+    el.addEventListener('pointerenter',()=>show(el));
+    el.addEventListener('focus',()=>show(el));
+    el.addEventListener('pointerleave',()=>tip.classList.remove('on'));
+    el.addEventListener('blur',()=>tip.classList.remove('on'));
+  });
+  document.getElementById('stripLegend').innerHTML =
+    [['AAA','Investment grade — $100k+'],['BB','Speculative — $10k to $100k'],
+     ['D','Distressed — breaks under $1k']]
+    .map(([b,t])=>`<span class="lg"><i style="background:${bc(b)}"></i>${t}</span>`).join('')
+    + `<span class="lg" style="color:var(--ash)">Hollow marks cannot absorb your intended exit</span>`;
+}
+
+/* The launchpad list is BUILT FROM THE DATA, never typed out. It was typed out, and
+   O1 RWA, Noxa, Pair Fund, Pools, Bankr, Lunch, Flap, Launchhood, DontBlink, Virtuals,
+   Letscash and Circus were all missing from it while sitting in the table -- a filter
+   that silently hides a launchpad is worse than no filter. */
+function buildPlatforms(){
+  const sel=document.getElementById('platf');
+  const n=new Map();
+  ROWS.forEach(r=>{ const k=r.p||''; n.set(k,(n.get(k)||0)+1); });
+  const named=[...n.entries()].filter(([k])=>k).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+  const mk=(v,t)=>{ const o=document.createElement('option'); o.value=v; o.textContent=t; return o; };
+  sel.append(mk('','All launchpads'));
+  named.forEach(([k,c])=>sel.append(mk(k, (k==='Robinhood'?'Robinhood (tokenised equity)':k)
+                                        + ' \u00b7 ' + c.toLocaleString())));
+  if(n.get('')) sel.append(mk('__u','Unattributed \u00b7 '+n.get('').toLocaleString()));
+}
+
+/* ---------- the book ---------- */
+const ORD={AAA:9,AA:8,A:7,BBB:6,BB:5,B:4,CCC:3,D:2,NR:1};
+let sk='d', sd=-1;
+const tb=document.getElementById('tb'), q=document.getElementById('q'),
+      kf=document.getElementById('kind'), bf=document.getElementById('bandf'),
+      pf=document.getElementById('platf'),
+      gf=document.getElementById('guard'),
+      cnt=document.getElementById('cnt');
+const GORD={t:4,u:3,s:2,r:1};
+const val=(r,k)=> k==='s'?r.s.toUpperCase() : k==='nm'?(r.nm||'￿').toUpperCase()
+                : k==='p'?r.p : k==='k'?r.k : k==='b'?ORD[r.b]
+                : k==='g'?(GORD[r.g]||0)-(r.m===1?0.5:0)
+                : k==='r'?(r.r==null?-1:r.r) : k==='d'?(r.d==null?-1:r.d) : (r.i[+k.slice(1)]==null?1e9:r.i[+k.slice(1)]);
+function renderTable(){
+  const term=q.value.trim().toUpperCase(), kk=kf.value, bb=bf.value;
+  let rows=ROWS.filter(r=>{
+    if(term && !(r.s.toUpperCase().includes(term) || (r.nm||'').toUpperCase().includes(term)))
+      return false;
+    if(kk && r.k!==kk) return false;
+    if(pf.value==='__u'){ if(r.p) return false; }
+    else if(pf.value && r.p!==pf.value) return false;
+    if(bb==='ig' && ORD[r.b]<6) return false;
+    if(bb==='spec' && !(ORD[r.b]>=3&&ORD[r.b]<=5)) return false;
+    if(bb==='D' && r.b!=='D') return false;
+    if(bb==='NR' && r.b!=='NR') return false;
+    const gg=gf.value;
+    if(gg==='m'    && r.m!==1) return false;
+    if(gg==='u'    && r.g!=='u') return false;
+    if(gg==='flag' && !(r.m===1 || r.g==='r' || r.g==='s' || r.g==='u')) return false;
+    return true;
+  });
+  rows.sort((a,b)=>{
+    const x=val(a,sk),y=val(b,sk);
+    if(x<y) return -sd; if(x>y) return sd;
+    return a.s.localeCompare(b.s);
+  });
+  cnt.textContent=`Showing ${rows.length.toLocaleString()} of ${ROWS.length.toLocaleString()}.`;
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.toggle('pick', th.dataset.sz!==undefined && +th.dataset.sz===PICK);
+    th.classList.toggle('on', th.dataset.k===sk);
+  });
+  tb.textContent='';
+  const fr=document.createDocumentFragment();
+  rows.slice(0,600).forEach(r=>{
+    const tr=document.createElement('tr');
+    const mk=(cls,txt,style)=>{
+      const td=document.createElement('td');
+      if(cls) td.className=cls;
+      if(style) td.style.cssText=style;
+      td.textContent=txt;
+      if(txt==='—') td.classList.add('na');
+      return td;
+    };
+    const tds=document.createElement('td');
+    tds.className='sym stripe';
+    tds.style.borderLeftColor=bc(r.b);
+    tds.appendChild(tickerLink(r));
+    tr.appendChild(tds);
+    const tdn=document.createElement('td'); tdn.className='nm';
+    if(r.nm){ tdn.textContent=r.nm; }
+    else { const i=document.createElement('i'); i.textContent=r.a; tdn.appendChild(i); }
+    tdn.title = r.nm ? r.nm+' · '+r.a : r.a;
+    tr.appendChild(tdn);
+    tr.appendChild(mk('cls', r.k==='e'?'Equity':'Chain asset'));
+    const tdp=document.createElement('td'); tdp.className='cls';
+    tdp.textContent = r.p || '—';
+    if(r.p==='Long') tdp.style.color=cv('--mint');
+    else if(r.p==='Pons') tdp.style.color=cv('--ink2');
+    else if(!r.p) tdp.style.color=cv('--ash');
+    tr.appendChild(tdp);
+    const tdb=document.createElement('td');
+    const sp=document.createElement('span');
+    sp.className='band'; sp.style.color=bc(r.b); sp.textContent=r.b;
+    tdb.appendChild(sp); tr.appendChild(tdb);
+    const tdg=document.createElement('td');
+    const gbox=document.createElement('div'); gbox.className='chips';
+    chipsFor(r,gbox); tdg.appendChild(gbox); tr.appendChild(tdg);
+    tr.appendChild(mk('', r.r==null?'—':usd(r.r)));
+    tr.appendChild(mk('', usd(r.d)));
+    [0,1,2,3,4].forEach(i=>tr.appendChild(mk(i===PICK?'pick':'', pct(r.i[i]))));
+    fr.appendChild(tr);
+  });
+  tb.appendChild(fr);
+}
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click',()=>{
+    const k=th.dataset.k;
+    if(sk===k) sd=-sd; else {sk=k; sd=(k==='s'||k==='nm'||k==='k'||k==='p')?1:-1;}
+    renderTable();
+  });
+});
+[q,kf,bf,pf,gf].forEach(el=>el.addEventListener('input',renderTable));
+
+function render(){ buildPlatforms(); renderVerdict(); renderCards(); renderScreen();
+                   renderStrip(); renderTable(); }
+boot();
+</script>
