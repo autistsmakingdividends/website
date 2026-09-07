@@ -33,7 +33,14 @@ a:hover{text-decoration:underline}
    inheriting those made the same markup render as a visibly different header. The first
    attempt also used registry's MOBILE sizes as its desktop ones, so the logo and
    wordmark came out a size small. */
-.mast{border-bottom:1px solid var(--rule);background:#050908;line-height:1.6;
+.mast{border-bottom:1px solid var(--rule);background:#050908;
+      /* The other two pages run a 16px/1.6 body; this one runs 14px/1.55. Every line in
+         the brand stack sets its own px size, so that looked harmless -- but a line box
+         is at least as tall as the STRUT, which comes from the inherited font-size. At
+         14px the strut is 22.4px instead of 25.6px and the whole brand block came out
+         5.2px shorter. Both values are pinned here so the header does not inherit this
+         page's typography at all. */
+      font-size:16px;line-height:1.6;
       --m-ink:#FFFFFF; --m-ink2:#B4C6BE; --m-dim:#788B83; --m-hot:#0BE39B}
 .mast .wrap{max-width:1080px}          /* registry's --maxw, so the brand sits identically */
 .mast-in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:11px 0}
